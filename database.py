@@ -5,6 +5,50 @@ class GestorBD:
     def __init__(self, db_name="sistema.db"):
         self.db_name = db_name
 
+    def actualizar_paso_checklist(self, checklist_id, completado):
+        """Marca o desmarca un paso del checklist."""
+        with sqlite3.connect(self.db_name) as conexion:
+            cursor = conexion.cursor()
+            cursor.execute(
+                'UPDATE checklist_prospecto SET completado = ? WHERE id = ?',
+                (completado, checklist_id)
+            )
+            conexion.commit()
+
+    def inicializar_checklist_prospecto(self, prospecto_id):
+        """Crea los 5 pasos por defecto si el prospecto no tiene checklist."""
+        pasos = [
+            "Contacto inicial",
+            "Medición",
+            "Diseño enviado",
+            "Cotización aceptada",
+            "Cliente"
+        ]
+        with sqlite3.connect(self.db_name) as conexion:
+            cursor = conexion.cursor()
+            # Solo insertar si no existen ya
+            cursor.execute(
+                'SELECT COUNT(*) FROM checklist_prospecto WHERE prospecto_id = ?',
+                (prospecto_id,)
+            )
+            if cursor.fetchone()[0] == 0:
+                for paso in pasos:
+                    cursor.execute(
+                        'INSERT INTO checklist_prospecto (prospecto_id, paso_nombre, completado) VALUES (?, ?, 0)',
+                        (prospecto_id, paso)
+                    )
+            conexion.commit()
+
+    def marcar_como_cliente(self, prospecto_id):
+        """Cuando todos los pasos están completos, actualiza es_cliente = 1."""
+        with sqlite3.connect(self.db_name) as conexion:
+            cursor = conexion.cursor()
+            cursor.execute(
+                'UPDATE prospectos SET es_cliente = 1 WHERE id = ?',
+                (prospecto_id,)
+            )
+            conexion.commit()
+
     def inicializar_bd(self):
         """Crea las tablas iniciales y usuarios por defecto."""
         with sqlite3.connect(self.db_name) as conexion:
