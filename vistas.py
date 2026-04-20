@@ -73,29 +73,46 @@ class VentanaAdmin(VentanaBase):
         self.centrar_ventana()
 
 class VentanaVendedor(VentanaBase):
-    def __init__(self):
-        super().__init__("Módulo de Ventas - Excellence Cocinas", 500, 400)
+    def __init__(self, usuario_info):
+        # 1. Recibimos usuario_info y ajustamos el tamaño
+        super().__init__("Módulo de Ventas - Excellence Cocinas", 1000, 700)
 
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout_principal = QVBoxLayout(self)
 
-        titulo = QLabel("Panel de Ventas")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold; color: #27AE60; margin-bottom: 20px;")
-
-        descripcion = QLabel("Cotizaciones y catálogo.")
-        descripcion.setStyleSheet("font-size: 14px; color: #555;")
+        # --- Saludo y encabezado ---
+        header = QHBoxLayout()
+        saludo = QLabel(f"Bienvenido, <b>{usuario_info['nombre']}</b> (Ventas)")
+        saludo.setStyleSheet("font-size: 14px; color: #333;")
 
         self.boton_logout = QPushButton("Cerrar Sesión")
-        self.boton_logout.setFixedSize(150, 40)
+        self.boton_logout.setFixedSize(120, 30)
         self.boton_logout.setStyleSheet(
-            "background-color: #E74C3C; color: white; border-radius: 5px; font-weight: bold; margin-top: 30px;")
+            "background-color: #E74C3C; color: white; border-radius: 5px; font-weight: bold;")
         self.boton_logout.clicked.connect(self.cerrar_sesion)
 
-        layout.addWidget(titulo, alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(descripcion, alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.boton_logout, alignment=Qt.AlignmentFlag.AlignCenter)
+        header.addWidget(saludo)
+        header.addStretch()
+        header.addWidget(self.boton_logout)
+        layout_principal.addLayout(header)
 
-        self.setLayout(layout)
+        # --- SISTEMA DE PESTAÑAS ---
+        self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("""
+            QTabBar::tab { height: 40px; width: 200px; font-weight: bold; }
+            QTabBar::tab:selected { color: #EF7C0F; border-bottom: 2px solid #EF7C0F; }
+        """)
+
+        # Pestaña 1: Mis Prospectos (Filtra automáticamente)
+        self.tab_prospectos = PanelProspectos(usuario_info)
+        self.tabs.addTab(self.tab_prospectos, "Mis Prospectos")
+
+        # Pestaña 2: Cotizaciones
+        self.tab_cotizaciones = QWidget()
+        layout_cot = QVBoxLayout(self.tab_cotizaciones)
+        layout_cot.addWidget(QLabel("Aquí generaremos las nuevas cotizaciones y PDFs"))
+        self.tabs.addTab(self.tab_cotizaciones, "Cotizaciones")
+
+        layout_principal.addWidget(self.tabs)
         self.centrar_ventana()
 
 

@@ -4,11 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="login casi terminado">
+    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="avances, problemas con vendedor">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sistema.db" beforeDir="false" afterPath="$PROJECT_DIR$/sistema.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vistas.py" beforeDir="false" afterPath="$PROJECT_DIR$/vistas.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,6 +22,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "Armando-Riv"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/Armando-Riv/ProyectoResidencia.git",
+    "accountId": "a59e2003-bd3e-4289-8800-e66d9115ac60"
+  }
+}]]></component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
@@ -111,11 +120,20 @@
       <option name="project" value="LOCAL" />
       <updated>1773262410678</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="avances, problemas con vendedor">
+      <option name="closed" value="true" />
+      <created>1776705226897</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1776705226897</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="login casi terminado" />
-    <option name="LAST_COMMIT_MESSAGE" value="login casi terminado" />
+    <MESSAGE value="avances, problemas con vendedor" />
+    <option name="LAST_COMMIT_MESSAGE" value="avances, problemas con vendedor" />
   </component>
 </project>
