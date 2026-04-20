@@ -1,7 +1,7 @@
 import os
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-                               QPushButton, QFrame, QMessageBox, QGraphicsDropShadowEffect)
-from PySide6.QtGui import QPixmap, QIcon, QAction
+                               QPushButton, QFrame, QMessageBox, QGraphicsDropShadowEffect,QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget)
+from PySide6.QtGui import QPixmap, QIcon, QAction, QColor
 from PySide6.QtCore import Qt, QSize
 from database import GestorBD
 
@@ -30,33 +30,47 @@ class VentanaBase(QWidget):
         self.close()
 
 
-# --- PANTALLAS HIJAS ---
 class VentanaAdmin(VentanaBase):
-    def __init__(self):
-        super().__init__("Panel Administrativo - Excellence Cocinas", 560, 460)
+    def __init__(self, usuario_info):
+        # Aumentamos el tamaño para que quepa bien la tabla
+        super().__init__("Panel Administrativo - Excellence Cocinas", 1000, 700)
 
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout_principal = QVBoxLayout(self)
 
-        titulo = QLabel("Panel Administrativo")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold; color: #2C3E50; margin-bottom: 20px;")
-
-        descripcion = QLabel("Gestión de inventario de muebles y materiales.")
-        descripcion.setStyleSheet("font-size: 14px; color: #555;")
+        # Saludo y encabezado
+        header = QHBoxLayout()
+        saludo = QLabel(f"Bienvenido, <b>{usuario_info['nombre']}</b> (Admin)")
+        saludo.setStyleSheet("font-size: 14px;")
 
         self.boton_logout = QPushButton("Cerrar Sesión")
-        self.boton_logout.setFixedSize(150, 40)
-        self.boton_logout.setStyleSheet(
-            "background-color: #E74C3C; color: white; border-radius: 5px; font-weight: bold; margin-top: 30px;")
+        self.boton_logout.setFixedSize(120, 30)
+        self.boton_logout.setStyleSheet("background-color: #E74C3C; color: white; border-radius: 5px;")
         self.boton_logout.clicked.connect(self.cerrar_sesion)
 
-        layout.addWidget(titulo, alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(descripcion, alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.boton_logout, alignment=Qt.AlignmentFlag.AlignCenter)
+        header.addWidget(saludo)
+        header.addStretch()
+        header.addWidget(self.boton_logout)
+        layout_principal.addLayout(header)
 
-        self.setLayout(layout)
+        # --- SISTEMA DE PESTAÑAS ---
+        self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("""
+            QTabBar::tab { height: 40px; width: 200px; font-weight: bold; }
+            QTabBar::tab:selected { color: #EF7C0F; border-bottom: 2px solid #EF7C0F; }
+        """)
+
+        # Pestaña 1: Prospectos
+        self.tab_prospectos = PanelProspectos(usuario_info)
+        self.tabs.addTab(self.tab_prospectos, "Prospectos y Clientes")
+
+        # Pestaña 2: Inventario (Aquí pondrás tu tabla de materiales después)
+        self.tab_inventario = QWidget()
+        layout_inv = QVBoxLayout(self.tab_inventario)
+        layout_inv.addWidget(QLabel("Aquí se gestionará el Inventario y Materiales"))
+        self.tabs.addTab(self.tab_inventario, "Inventario / Materiales")
+
+        layout_principal.addWidget(self.tabs)
         self.centrar_ventana()
-
 
 class VentanaVendedor(VentanaBase):
     def __init__(self):
@@ -213,17 +227,79 @@ class VentanaLogin(VentanaBase):
         usuario = self.input_usuario.text()
         contrasena = self.input_contrasena.text()
 
-        db = GestorBD()
-        rol = db.validar_usuario(usuario, contrasena)
+        if not usuario or not contrasena:
+            QMessageBox.warning(self, "Campos vacíos", "Por favor ingresa todos los datos.")
+            return
 
-        if rol == 'admin':
-            self.nueva_ventana = VentanaAdmin()
-            self.nueva_ventana.show()
-            self.close()
-        elif rol == 'vendedor':
-            self.nueva_ventana = VentanaVendedor()
+        db = GestorBD()
+        resultado = db.validar_usuario(usuario, contrasena)
+
+        if resultado:
+            # Empaquetamos la info en un diccionario para pasarlo fácil entre ventanas
+            usuario_info = {
+                'id': resultado[0],
+                'nombre': resultado[1],
+                'rol': resultado[2]
+            }
+
+            if usuario_info['rol'] == 'admin':
+                self.nueva_ventana = VentanaAdmin(usuario_info)
+            elif usuario_info['rol'] == 'vendedor':
+                self.nueva_ventana = VentanaVendedor(usuario_info)
+
             self.nueva_ventana.show()
             self.close()
         else:
             QMessageBox.warning(self, "Error de Acceso", "Usuario o contraseña incorrectos.")
             self.input_contrasena.clear()
+
+
+
+
+class PanelProspectos(QWidget):
+    def __init__(self, usuario_info):
+        super().__init__()
+        self.usuario_id = usuario_info['id']
+        self.es_admin = usuario_info['rol'] == 'admin'
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        # Título de la sección
+        titulo = QLabel("Seguimiento de Prospectos y Clientes")
+        titulo.setStyleSheet("font-size: 18px; font-weight: bold; color: #2C3E50; margin-bottom: 10px;")
+        layout.addWidget(titulo)
+
+        # Configuración de la Tabla
+        self.tabla = QTableWidget()
+        columnas = ["ID", "Nombre", "Teléfono", "Estatus"]
+        if self.es_admin:
+            columnas.insert(3, "Vendedor Asignado")  # El admin ve quién atiende a quién
+
+        self.tabla.setColumnCount(len(columnas))
+        self.tabla.setHorizontalHeaderLabels(columnas)
+        self.tabla.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.tabla.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)  # Solo lectura por ahora
+        self.tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+
+        layout.addWidget(self.tabla)
+        self.cargar_datos()
+
+    def cargar_datos(self):
+        """Consulta la BD y llena la tabla según los permisos."""
+        db = GestorBD()
+        prospectos = db.obtener_prospectos(self.usuario_id, self.es_admin)
+
+        self.tabla.setRowCount(0)
+        for row_number, row_data in enumerate(prospectos):
+            self.tabla.insertRow(row_number)
+            for column_number, data in enumerate(row_data):
+                # Formatear el estatus visualmente
+                if column_number == len(row_data) - 1:  # Es la columna 'es_cliente'
+                    item_texto = "✅ Cliente" if data == 1 else "⏳ Prospecto"
+                    item = QTableWidgetItem(item_texto)
+                    if data == 1: item.setForeground(QColor("#27AE60"))
+                else:
+                    item = QTableWidgetItem(str(data))
+
+                self.tabla.setItem(row_number, column_number, item)
