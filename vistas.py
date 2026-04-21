@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineE
 from PySide6.QtGui import QPixmap, QIcon, QAction, QColor
 from PySide6.QtCore import Qt, QSize
 from database import GestorBD
+from PySide6.QtWidgets import QDialog
 
 from PySide6.QtCore import Qt, QSize, Signal
 
@@ -486,6 +487,57 @@ class DetalleProspecto(QWidget):
 # -------------------------------------------------------
 # PANEL PRINCIPAL — reemplaza PanelProspectos
 # -------------------------------------------------------
+
+
+
+
+class DialogoNuevoProspecto(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Nuevo Prospecto")
+        self.setFixedSize(350, 250)
+        self.setStyleSheet("background-color: white; border-radius: 8px;")
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+
+        lbl_titulo = QLabel("Datos del Prospecto")
+        lbl_titulo.setStyleSheet("font-size: 16px; font-weight: bold; color: #2C3E50;")
+        layout.addWidget(lbl_titulo)
+
+        estilo_input = "background-color: #F8F9FA; border: 1px solid #E0E4E9; border-radius: 5px; padding: 8px;"
+
+        self.input_nombre = QLineEdit()
+        self.input_nombre.setPlaceholderText("Nombre completo")
+        self.input_nombre.setStyleSheet(estilo_input)
+        layout.addWidget(self.input_nombre)
+
+        self.input_telefono = QLineEdit()
+        self.input_telefono.setPlaceholderText("Teléfono (Ej. 668 123 4567)")
+        self.input_telefono.setStyleSheet(estilo_input)
+        layout.addWidget(self.input_telefono)
+
+        # Botones
+        layout_botones = QHBoxLayout()
+        btn_cancelar = QPushButton("Cancelar")
+        btn_cancelar.setStyleSheet("background-color: #ECF0F1; padding: 8px; border-radius: 5px;")
+        btn_cancelar.clicked.connect(self.reject)
+
+        btn_guardar = QPushButton("Guardar")
+        btn_guardar.setStyleSheet(
+            "background-color: #27AE60; color: white; font-weight: bold; padding: 8px; border-radius: 5px;")
+        btn_guardar.clicked.connect(self.accept)
+
+        layout_botones.addWidget(btn_cancelar)
+        layout_botones.addWidget(btn_guardar)
+
+        layout.addStretch()
+        layout.addLayout(layout_botones)
+
+    def obtener_datos(self):
+        return self.input_nombre.text(), self.input_telefono.text()
+
+
 class PanelProspectos(QWidget):
     """Dos pestañas: Mis Prospectos / Mis Clientes. Cada una con cards."""
 
@@ -508,9 +560,22 @@ class PanelProspectos(QWidget):
         layout_lista = QVBoxLayout(pagina_lista)
         layout_lista.setContentsMargins(10, 10, 10, 10)
 
+        # Header con Título y Botón
+        header_layout = QHBoxLayout()
         titulo = QLabel("Seguimiento de Prospectos y Clientes")
-        titulo.setStyleSheet("font-size: 18px; font-weight: bold; color: #2C3E50; margin-bottom: 6px;")
-        layout_lista.addWidget(titulo)
+        titulo.setStyleSheet("font-size: 18px; font-weight: bold; color: #2C3E50;")
+
+        self.btn_nuevo = QPushButton("+ Nuevo Prospecto")
+        self.btn_nuevo.setFixedSize(140, 30)
+        self.btn_nuevo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_nuevo.setStyleSheet("background-color: #27AE60; color: white; font-weight: bold; border-radius: 5px;")
+        self.btn_nuevo.clicked.connect(self._abrir_formulario_nuevo)
+
+        header_layout.addWidget(titulo)
+        header_layout.addStretch()
+        header_layout.addWidget(self.btn_nuevo)
+
+        layout_lista.addLayout(header_layout)  # Reemplaza el layout_lista.addWidget(titulo) anterior
 
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
@@ -614,3 +679,15 @@ class PanelProspectos(QWidget):
     def _volver_lista(self):
         self.cargar_datos()  # Refresca por si cambió algún paso
         self.stack.setCurrentIndex(0)
+
+    def _abrir_formulario_nuevo(self):
+            dialogo = DialogoNuevoProspecto(self)
+            if dialogo.exec():  # Si el usuario presiona "Guardar"
+                nombre, telefono = dialogo.obtener_datos()
+                if nombre:
+                    # Guardar en base de datos
+                    nuevo_id = self.db.agregar_prospecto(nombre, telefono, self.usuario_id)
+                    # Inicializar inmediatamente su checklist
+                    self.db.inicializar_checklist_prospecto(nuevo_id)
+                    # Refrescar la pantalla
+                    self.cargar_datos()

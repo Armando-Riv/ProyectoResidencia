@@ -15,6 +15,16 @@ class GestorBD:
             )
             conexion.commit()
 
+    def agregar_prospecto(self, nombre, telefono, vendedor_id):
+        """Inserta un nuevo prospecto en la base de datos."""
+        with sqlite3.connect(self.db_name) as conexion:
+            cursor = conexion.cursor()
+            cursor.execute('''
+                INSERT INTO prospectos (nombre, telefono, vendedor_id)
+                VALUES (?, ?, ?)
+            ''', (nombre, telefono, vendedor_id))
+            conexion.commit()
+            return cursor.lastrowid  # Devuelve el ID del prospecto recién creado
     def inicializar_checklist_prospecto(self, prospecto_id):
         """Crea los 5 pasos por defecto si el prospecto no tiene checklist."""
         pasos = [
