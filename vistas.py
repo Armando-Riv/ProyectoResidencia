@@ -584,35 +584,82 @@ class DetalleProspecto(QWidget):
         layout_header.addWidget(lbl_tel)
         layout.addWidget(card_header)
         # ==========================================
-        # SECCIÓN DE AGENDAR CITA (CORREGIDA)
+        # SECCIÓN DE AGENDAR CITA (DISEÑO DEFINITIVO)
         # ==========================================
         lbl_fase1 = QLabel("Fase 1: Agendar Cita")
         lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #1E293B; margin-top: 10px;")
         layout.addWidget(lbl_fase1)
 
         frame_cita = QFrame()
-        frame_cita.setFixedHeight(105)  # Mantiene la tarjeta compacta
+        frame_cita.setFixedHeight(105)
         frame_cita.setStyleSheet("QFrame { background-color: white; border-radius: 12px; border: 1px solid #E2E8F0; }")
 
         layout_cita = QHBoxLayout(frame_cita)
         layout_cita.setContentsMargins(25, 15, 25, 15)
         layout_cita.setSpacing(25)
 
-        # --- Estilo general para los inputs ---
-        # Quitamos fondos y bordes para que el tema "Fusion" dibuje los iconos perfectamente
-        estilo_inputs = "font-size: 14px; color: #1E293B; padding: 2px;"
+        # --- CSS A PRUEBA DE BALAS PARA DIBUJAR LAS FLECHAS ---
+        # --- REEMPLAZA el bloque estilo_inputs (líneas 602-652) con este ---
+        # Rutas a los iconos (igual que haces con ver.png / ocultar.png)
+        ruta_arrow_down = os.path.join(os.path.dirname(__file__), 'arrow_down.png').replace("\\", "/")
+        ruta_arrow_up = os.path.join(os.path.dirname(__file__), 'arrow_up.png').replace("\\", "/")
 
-        # --- Creamos la paleta para colores claros ---
-        paleta_clara = QPalette()
-        paleta_clara.setColor(QPalette.ColorRole.Base, QColor("#FFFFFF"))  # Fondo
-        paleta_clara.setColor(QPalette.ColorRole.Text, QColor("#1E293B"))  # Texto
-        paleta_clara.setColor(QPalette.ColorRole.Button, QColor("#F8FAFC"))  # Botones nativos
-        paleta_clara.setColor(QPalette.ColorRole.ButtonText, QColor("#1E293B"))  # Flechas
+        estilo_inputs = f"""
+            QDateEdit, QTimeEdit {{
+                background-color: #FFFFFF;
+                border: 1px solid #CBD5E1;
+                border-radius: 5px;
+                padding: 4px 10px;
+                color: #1E293B;
+                font-size: 14px;
+            }}
+            QDateEdit:focus, QTimeEdit:focus {{ border: 1px solid #EF7C0F; }}
 
-        # --- Creamos la fuente nativa en lugar de usar CSS ---
-        fuente_inputs = QFont()
-        fuente_inputs.setPointSize(11)  # Equivalente a 14px aprox.
+            /* -- Botón del calendario (DateEdit) -- */
+            QDateEdit::drop-down {{
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 28px;
+                border-left: 1px solid #CBD5E1;
+                background-color: #F8FAFC;
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+            }}
+            QDateEdit::down-arrow {{
+                image: url({ruta_arrow_down});
+                width: 10px;
+                height: 6px;
+            }}
 
+            /* -- Flechas del reloj (TimeEdit) -- */
+            QTimeEdit::up-button {{
+                subcontrol-origin: border;
+                subcontrol-position: top right;
+                width: 28px;
+                background-color: #F8FAFC;
+                border-left: 1px solid #CBD5E1;
+                border-top-right-radius: 4px;
+                border-bottom: 1px solid #CBD5E1;
+            }}
+            QTimeEdit::down-button {{
+                subcontrol-origin: border;
+                subcontrol-position: bottom right;
+                width: 28px;
+                background-color: #F8FAFC;
+                border-left: 1px solid #CBD5E1;
+                border-bottom-right-radius: 4px;
+            }}
+            QTimeEdit::up-arrow {{
+                image: url({ruta_arrow_up});
+                width: 10px;
+                height: 6px;
+            }}
+            QTimeEdit::down-arrow {{
+                image: url({ruta_arrow_down});
+                width: 10px;
+                height: 6px;
+            }}
+        """
         # --- Columna 1: Fecha ---
         columna_fecha = QVBoxLayout()
         columna_fecha.setSpacing(5)
@@ -622,10 +669,8 @@ class DetalleProspecto(QWidget):
         self.input_fecha = QDateEdit(QDate.currentDate())
         self.input_fecha.setCalendarPopup(True)
         self.input_fecha.setDisplayFormat("dd/MM/yyyy")
-        self.input_fecha.setMinimumHeight(32)
-        self.input_fecha.setMinimumWidth(120)
-        self.input_fecha.setPalette(paleta_clara)
-        self.input_fecha.setFont(fuente_inputs)  # <--- Aplicamos la fuente sin romper las flechas
+        self.input_fecha.setFixedSize(140, 36)  # Regresamos a FixedSize para que coincida con el botón
+        self.input_fecha.setStyleSheet(estilo_inputs)
 
         calendario = self.input_fecha.calendarWidget()
         calendario.setStyleSheet("""
@@ -645,10 +690,8 @@ class DetalleProspecto(QWidget):
 
         self.input_hora = QTimeEdit(QTime.currentTime())
         self.input_hora.setDisplayFormat("hh:mm AP")
-        self.input_hora.setMinimumHeight(32)
-        self.input_hora.setMinimumWidth(110)
-        self.input_hora.setPalette(paleta_clara)
-        self.input_hora.setFont(fuente_inputs)  # <--- Aplicamos la fuente sin romper las flechas
+        self.input_hora.setFixedSize(120, 36)
+        self.input_hora.setStyleSheet(estilo_inputs)
 
         columna_hora.addWidget(lbl_hora)
         columna_hora.addWidget(self.input_hora)
@@ -657,12 +700,12 @@ class DetalleProspecto(QWidget):
         columna_boton = QVBoxLayout()
         columna_boton.setAlignment(Qt.AlignmentFlag.AlignBottom)
         btn_agendar = QPushButton("Guardar Cita")
-        btn_agendar.setFixedSize(140, 38)
+        btn_agendar.setFixedSize(140, 36)
         btn_agendar.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_agendar.setStyleSheet("""
-                QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
-                QPushButton:hover { background-color: #219653; }
-            """)
+                    QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
+                    QPushButton:hover { background-color: #219653; }
+                """)
         btn_agendar.clicked.connect(self._guardar_cita)
         columna_boton.addWidget(btn_agendar)
 
@@ -674,13 +717,10 @@ class DetalleProspecto(QWidget):
 
         layout.addWidget(frame_cita)
 
-        # --------------------------------------------------------
         # Lógica visual para cuando ya existe una cita agendada
-        # --------------------------------------------------------
         cita_existente = self.db.obtener_cita(prospecto_id)
         if cita_existente:
             fecha_str, hora_str = cita_existente
-            # Se convierte string de BD (dd/MM/yyyy) a QDate
             self.input_fecha.setDate(QDate.fromString(fecha_str, "dd/MM/yyyy"))
             self.input_hora.setTime(QTime.fromString(hora_str, "hh:mm AP"))
 
@@ -688,11 +728,10 @@ class DetalleProspecto(QWidget):
             lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #27AE60; margin-top: 10px;")
             btn_agendar.setText("Actualizar Cita")
             btn_agendar.setStyleSheet("""
-                    QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
-                    QPushButton:hover { background-color: #C06513; }
-                """)
+                        QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
+                        QPushButton:hover { background-color: #C06513; }
+                    """)
 
-        # ESTO ES LO QUE EMPUJA TODO HACIA ARRIBA Y EVITA QUE SE ESTIRE
         layout.addStretch()
 
     def _guardar_cita(self):
