@@ -2,7 +2,7 @@ import os, re
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QFrame, QMessageBox, QGraphicsDropShadowEffect,QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget,QProgressBar, QCheckBox, QScrollArea,
                                 QStackedWidget, QSizePolicy)
-from PySide6.QtGui import QPixmap, QIcon, QAction, QColor, QPalette,QFont
+from PySide6.QtGui import QPixmap, QIcon, QAction, QColor
 from database import GestorBD
 from PySide6.QtWidgets import QDialog,QDateEdit, QTimeEdit
 from PySide6.QtCore import Qt, QSize, Signal,QDate, QTime
