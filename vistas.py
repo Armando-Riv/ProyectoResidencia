@@ -1,13 +1,11 @@
-import os
+import os, re
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QFrame, QMessageBox, QGraphicsDropShadowEffect,QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget,QProgressBar, QCheckBox, QScrollArea,
                                 QStackedWidget, QSizePolicy)
 from PySide6.QtGui import QPixmap, QIcon, QAction, QColor
-from PySide6.QtCore import Qt, QSize
 from database import GestorBD
-from PySide6.QtWidgets import QDialog
-
-from PySide6.QtCore import Qt, QSize, Signal
+from PySide6.QtWidgets import QDialog,QDateEdit, QTimeEdit
+from PySide6.QtCore import Qt, QSize, Signal,QDate, QTime
 
 
 # --- CLASE PADRE (HERENCIA) ---
@@ -357,9 +355,7 @@ class TarjetaProspecto(QFrame):
         super().mousePressEvent(event)
 
 
-# -------------------------------------------------------
-# WIDGET: Detalle de un prospecto con checklist visual
-# -------------------------------------------------------
+
 class DetalleProspecto(QWidget):
     """Panel lateral que muestra los 5 pasos con checkboxes y barra de progreso."""
 
@@ -485,48 +481,375 @@ class DetalleProspecto(QWidget):
 
 
 # -------------------------------------------------------
-# PANEL PRINCIPAL — reemplaza PanelProspectos
+# WIDGET: Tarjeta individual de un prospecto/cliente
+
 # -------------------------------------------------------
+class TarjetaProspecto(QFrame):
+    clicked = Signal(int)
+
+    def __init__(self, prospecto_id, nombre, telefono, cita_info):
+        super().__init__()
+        self.prospecto_id = prospecto_id
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFixedHeight(105)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._aplicar_estilo(False)
+
+        self.sombra = QGraphicsDropShadowEffect(self)
+        self.sombra.setBlurRadius(15)
+        self.sombra.setYOffset(4)
+        self.sombra.setColor(QColor(0, 0, 0, 20))
+        self.setGraphicsEffect(self.sombra)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 15, 20, 15)
+
+        fila_top = QHBoxLayout()
+        lbl_nombre = QLabel(f"<b>{nombre}</b>")
+        lbl_nombre.setStyleSheet("font-size: 15px; color: #1E293B; background: transparent;")
+        lbl_tel = QLabel(f"📞 {telefono}")
+        lbl_tel.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; background: transparent;")
+
+        fila_top.addWidget(lbl_nombre)
+        fila_top.addStretch()
+        fila_top.addWidget(lbl_tel)
+        layout.addLayout(fila_top)
+
+        # Estado visual basado en la Cita
+        if cita_info:
+            fecha, hora = cita_info
+            lbl_estado = QLabel(f"📅 Cita programada: {fecha} a las {hora}")
+            lbl_estado.setStyleSheet("font-size: 13px; font-weight: bold; color: #EF7C0F; background: transparent;")
+        else:
+            lbl_estado = QLabel("⏳ Nuevo - Pendiente de agendar cita")
+            lbl_estado.setStyleSheet("font-size: 13px; font-weight: 500; color: #94A3B8; background: transparent;")
+
+        layout.addWidget(lbl_estado)
+
+    def _aplicar_estilo(self, hover):
+        fondo = "#F8FAFC" if hover else "#FFFFFF"
+        borde = "1px solid #CBD5E1" if hover else "1px solid transparent"
+        self.setStyleSheet(f"TarjetaProspecto {{ background-color: {fondo}; border: {borde}; border-radius: 12px; }}")
+
+    def enterEvent(self, event):
+        self._aplicar_estilo(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._aplicar_estilo(False)
+        super().leaveEvent(event)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit(self.prospecto_id)
+        super().mousePressEvent(event)
+
+# -------------------------------------------------------
+# WIDGET: Detalle de un prospecto con checklist visual
+# -------------------------------------------------------
+class DetalleProspecto(QWidget):
+    cerrado = Signal()
+
+    def __init__(self, prospecto_id, nombre, telefono):
+        super().__init__()
+        self.prospecto_id = prospecto_id
+        self.db = GestorBD()
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setStyleSheet("DetalleProspecto { background-color: #F8F9FB; }")
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 25, 30, 25)
+        layout.setSpacing(15)
+
+        btn_volver = QPushButton("← Volver a la lista")
+        btn_volver.setFixedSize(140, 35)
+        btn_volver.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_volver.setStyleSheet("""
+            QPushButton { background-color: white; color: #EF7C0F; border: 1px solid #EF7C0F; border-radius: 6px; font-weight: bold; font-size: 13px; }
+            QPushButton:hover { background-color: #EF7C0F; color: white; }
+        """)
+        btn_volver.clicked.connect(self.cerrado.emit)
+        layout.addWidget(btn_volver)
+
+        card_header = QFrame()
+        card_header.setStyleSheet("background-color: white; border-radius: 10px; border: 1px solid #E2E8F0;")
+        layout_header = QVBoxLayout(card_header)
+        lbl_nombre = QLabel(f"{nombre}")
+        lbl_nombre.setStyleSheet("font-size: 22px; font-weight: bold; color: #1E293B; border: none;")
+        lbl_tel = QLabel(f"📞 {telefono}")
+        lbl_tel.setStyleSheet("font-size: 14px; font-weight: bold; color: #64748B; border: none;")
+        layout_header.addWidget(lbl_nombre)
+        layout_header.addWidget(lbl_tel)
+        layout.addWidget(card_header)
+
+        # ==========================================
+        # SECCIÓN DE AGENDAR CITA (DISEÑO MEJORADO)
+        # ==========================================
+        lbl_fase1 = QLabel("Fase 1: Agendar Cita")
+        lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #1E293B; margin-top: 10px;")
+        layout.addWidget(lbl_fase1)
+
+        frame_cita = QFrame()
+        frame_cita.setStyleSheet("QFrame { background-color: white; border-radius: 12px; border: 1px solid #E2E8F0; }")
+
+        # Layout horizontal principal para la tarjeta
+        layout_cita = QHBoxLayout(frame_cita)
+        layout_cita.setContentsMargins(25, 20, 25, 20)
+        layout_cita.setSpacing(25)  # Más espacio entre columnas
+
+        # --- Columna 1: Fecha ---
+        columna_fecha = QVBoxLayout()
+        columna_fecha.setSpacing(8)
+        lbl_fecha = QLabel("📅 Fecha:")
+        lbl_fecha.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
+
+        self.input_fecha = QDateEdit(QDate.currentDate())
+        self.input_fecha.setCalendarPopup(True)
+        self.input_fecha.setFixedSize(140, 38)  # Damos tamaño fijo para que no se aplaste
+        self.input_fecha.setStyleSheet("""
+                    QDateEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 5px 10px; font-size: 14px; color: #1E293B; }
+                    QDateEdit:focus { border: 1px solid #EF7C0F; }
+                    QDateEdit::drop-down { border: none; width: 30px; }
+                """)
+        columna_fecha.addWidget(lbl_fecha)
+        columna_fecha.addWidget(self.input_fecha)
+
+        # --- Columna 2: Hora ---
+        columna_hora = QVBoxLayout()
+        columna_hora.setSpacing(8)
+        lbl_hora = QLabel("⏰ Hora:")
+        lbl_hora.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
+
+        self.input_hora = QTimeEdit(QTime.currentTime())
+        self.input_hora.setFixedSize(120, 38)
+        self.input_hora.setStyleSheet("""
+                    QTimeEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 5px 10px; font-size: 14px; color: #1E293B; }
+                    QTimeEdit:focus { border: 1px solid #EF7C0F; }
+                    QTimeEdit::up-button, QTimeEdit::down-button { width: 20px; }
+                """)
+        columna_hora.addWidget(lbl_hora)
+        columna_hora.addWidget(self.input_hora)
+
+        # --- Columna 3: Botón Guardar ---
+        columna_boton = QVBoxLayout()
+        columna_boton.addStretch()  # Empuja el botón hacia abajo para alinearlo con los inputs
+        btn_agendar = QPushButton("Guardar Cita")
+        btn_agendar.setFixedSize(140, 38)
+        btn_agendar.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_agendar.setStyleSheet("""
+                    QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
+                    QPushButton:hover { background-color: #219653; }
+                """)
+        btn_agendar.clicked.connect(self._guardar_cita)
+        columna_boton.addWidget(btn_agendar)
+
+        # Ensamblar las columnas en el contenedor principal
+        layout_cita.addLayout(columna_fecha)
+        layout_cita.addLayout(columna_hora)
+        layout_cita.addStretch()  # Espacio en blanco al centro
+        layout_cita.addLayout(columna_boton)
+
+        layout.addWidget(frame_cita)
+
+        # --------------------------------------------------------
+        # Lógica visual para cuando ya existe una cita agendada
+        # --------------------------------------------------------
+        cita_existente = self.db.obtener_cita(prospecto_id)
+        if cita_existente:
+            fecha_str, hora_str = cita_existente
+            self.input_fecha.setDate(QDate.fromString(fecha_str, Qt.DateFormat.ISODate))
+            try:
+                hora_partes = hora_str.split(':')
+                if len(hora_partes) >= 2:
+                    self.input_hora.setTime(QTime(int(hora_partes[0]), int(hora_partes[1])))
+            except:
+                pass
+
+            lbl_fase1.setText("Fase 1: Cita Agendada ✅")
+            lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #27AE60; margin-top: 10px;")
+            btn_agendar.setText("Actualizar Cita")
+            btn_agendar.setStyleSheet("""
+                        QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
+                        QPushButton:hover { background-color: #C06513; }
+                    """)
+        # ==========================================
+            # ==========================================
+            # SECCIÓN DE AGENDAR CITA (COMPACTA Y CON CALENDARIO)
+            # ==========================================
+            lbl_fase1 = QLabel("Fase 1: Agendar Cita")
+            lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #1E293B; margin-top: 10px;")
+            layout.addWidget(lbl_fase1)
+
+            frame_cita = QFrame()
+            frame_cita.setFixedHeight(105)  # <--- SOLUCIÓN: Fijamos la altura para que no se estire
+            frame_cita.setStyleSheet(
+                "QFrame { background-color: white; border-radius: 12px; border: 1px solid #E2E8F0; }")
+
+            layout_cita = QHBoxLayout(frame_cita)
+            layout_cita.setContentsMargins(25, 15, 25, 15)
+            layout_cita.setSpacing(25)
+
+            # --- Columna 1: Fecha ---
+            columna_fecha = QVBoxLayout()
+            columna_fecha.setSpacing(5)
+            lbl_fecha = QLabel("📅 Fecha:")
+            lbl_fecha.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
+
+            self.input_fecha = QDateEdit(QDate.currentDate())
+            self.input_fecha.setCalendarPopup(True)  # Esto activa el mini-calendario flotante
+            self.input_fecha.setFixedSize(140, 35)
+            # Quitamos la configuración de "drop-down" para que PySide dibuje la flecha del calendario
+            self.input_fecha.setStyleSheet("""
+                    QDateEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 5px 10px; font-size: 14px; color: #1E293B; }
+                    QDateEdit:focus { border: 1px solid #EF7C0F; }
+                """)
+
+            # Le damos un toque moderno al calendario emergente
+            calendario = self.input_fecha.calendarWidget()
+            calendario.setStyleSheet("QCalendarWidget QWidget { background-color: white; color: #1E293B; }")
+
+            columna_fecha.addWidget(lbl_fecha)
+            columna_fecha.addWidget(self.input_fecha)
+
+            # --- Columna 2: Hora ---
+            columna_hora = QVBoxLayout()
+            columna_hora.setSpacing(5)
+            lbl_hora = QLabel("⏰ Hora:")
+            lbl_hora.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
+
+            self.input_hora = QTimeEdit(QTime.currentTime())
+            self.input_hora.setFixedSize(120, 35)
+            self.input_hora.setStyleSheet("""
+                    QTimeEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 5px 10px; font-size: 14px; color: #1E293B; }
+                    QTimeEdit:focus { border: 1px solid #EF7C0F; }
+                """)
+            columna_hora.addWidget(lbl_hora)
+            columna_hora.addWidget(self.input_hora)
+
+            # --- Columna 3: Botón Guardar ---
+            columna_boton = QVBoxLayout()
+            columna_boton.setAlignment(
+                Qt.AlignmentFlag.AlignBottom)  # Empuja el botón hacia abajo para alinearlo con los inputs
+            btn_agendar = QPushButton("Guardar Cita")
+            btn_agendar.setFixedSize(140, 35)
+            btn_agendar.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_agendar.setStyleSheet("""
+                    QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
+                    QPushButton:hover { background-color: #219653; }
+                """)
+            btn_agendar.clicked.connect(self._guardar_cita)
+            columna_boton.addWidget(btn_agendar)
+
+            # Ensamblar las columnas
+            layout_cita.addLayout(columna_fecha)
+            layout_cita.addLayout(columna_hora)
+            layout_cita.addStretch()
+            layout_cita.addLayout(columna_boton)
+
+            layout.addWidget(frame_cita)
+
+            # --------------------------------------------------------
+            # Lógica visual para cuando ya existe una cita agendada
+            # --------------------------------------------------------
+            cita_existente = self.db.obtener_cita(prospecto_id)
+            if cita_existente:
+                fecha_str, hora_str = cita_existente
+                self.input_fecha.setDate(QDate.fromString(fecha_str, Qt.DateFormat.ISODate))
+                try:
+                    hora_partes = hora_str.split(':')
+                    if len(hora_partes) >= 2:
+                        self.input_hora.setTime(QTime(int(hora_partes[0]), int(hora_partes[1])))
+                except:
+                    pass
+
+                lbl_fase1.setText("Fase 1: Cita Agendada ✅")
+                lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #27AE60; margin-top: 10px;")
+                btn_agendar.setText("Actualizar Cita")
+                btn_agendar.setStyleSheet("""
+                        QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
+                        QPushButton:hover { background-color: #C06513; }
+                    """)
+
+            layout.addStretch()  # <--- MUY IMPORTANTE: Esto empuja la tarjeta hacia arriba y evita que se estire
+            # ==========================================
+        # Cargar datos existentes si ya hay cita
+        cita_existente = self.db.obtener_cita(prospecto_id)
+        if cita_existente:
+            fecha_str, hora_str = cita_existente
+            # Formateamos los strings devuelta a QDate y QTime
+            self.input_fecha.setDate(QDate.fromString(fecha_str, Qt.DateFormat.ISODate))
+            # Ajuste de conversión de hora para evitar errores de PySide
+            try:
+                hora_partes = hora_str.split(':')
+                if len(hora_partes) >= 2:
+                    self.input_hora.setTime(QTime(int(hora_partes[0]), int(hora_partes[1])))
+            except:
+                pass
+
+            lbl_fase1.setText("Fase 1: Cita Agendada ✅")
+            lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #27AE60; margin-top: 10px;")
+
+        layout.addStretch()
+
+    def _guardar_cita(self):
+        fecha = self.input_fecha.date().toString(Qt.DateFormat.ISODate)
+        hora = self.input_hora.time().toString("HH:mm")  # Guardamos formato simple 24h
+
+        self.db.agendar_cita(self.prospecto_id, fecha, hora)
+        QMessageBox.information(self, "Éxito", "La cita se ha agendado correctamente.")
+        self.cerrado.emit()  # Regresamos a la lista para refrescar la tarjeta
 
 
-
+# -------------------------------------------------------
+# DIÁLOGO NUEVO PROSPECTO Y PANEL PRINCIPAL
+# -------------------------------------------------------
 
 class DialogoNuevoProspecto(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Nuevo Prospecto")
-        self.setFixedSize(350, 250)
-        self.setStyleSheet("background-color: white; border-radius: 8px;")
+        self.setFixedSize(380, 260)
+        self.setStyleSheet("background-color: white;")
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(25, 25, 25, 25)
         layout.setSpacing(15)
 
-        lbl_titulo = QLabel("Datos del Prospecto")
-        lbl_titulo.setStyleSheet("font-size: 16px; font-weight: bold; color: #2C3E50;")
+        lbl_titulo = QLabel("Registrar Nuevo Prospecto")
+        lbl_titulo.setStyleSheet("font-size: 18px; font-weight: bold; color: #1E293B;")
         layout.addWidget(lbl_titulo)
 
-        estilo_input = "background-color: #F8F9FA; border: 1px solid #E0E4E9; border-radius: 5px; padding: 8px;"
+        estilo_input = """
+            QLineEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 10px; font-size: 14px; color: #333; }
+            QLineEdit:focus { border: 1px solid #EF7C0F; }
+        """
 
         self.input_nombre = QLineEdit()
-        self.input_nombre.setPlaceholderText("Nombre completo")
+        self.input_nombre.setPlaceholderText("Nombre completo del cliente")
         self.input_nombre.setStyleSheet(estilo_input)
         layout.addWidget(self.input_nombre)
 
         self.input_telefono = QLineEdit()
-        self.input_telefono.setPlaceholderText("Teléfono (Ej. 668 123 4567)")
+        self.input_telefono.setPlaceholderText("Teléfono (10 dígitos)")
         self.input_telefono.setStyleSheet(estilo_input)
         layout.addWidget(self.input_telefono)
 
-        # Botones
         layout_botones = QHBoxLayout()
         btn_cancelar = QPushButton("Cancelar")
-        btn_cancelar.setStyleSheet("background-color: #ECF0F1; padding: 8px; border-radius: 5px;")
+        btn_cancelar.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_cancelar.setStyleSheet(
+            "QPushButton { background-color: #F1F5F9; color: #475569; font-weight: bold; padding: 10px; border-radius: 6px; border: none; } QPushButton:hover { background-color: #E2E8F0; }")
         btn_cancelar.clicked.connect(self.reject)
 
-        btn_guardar = QPushButton("Guardar")
+        btn_guardar = QPushButton("Guardar Prospecto")
+        btn_guardar.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_guardar.setStyleSheet(
-            "background-color: #27AE60; color: white; font-weight: bold; padding: 8px; border-radius: 5px;")
-        btn_guardar.clicked.connect(self.accept)
+            "QPushButton { background-color: #27AE60; color: white; font-weight: bold; padding: 10px; border-radius: 6px; border: none; } QPushButton:hover { background-color: #219653; }")
+
+        # Conectamos a nuestro propio método de validación en lugar de accept directo
+        btn_guardar.clicked.connect(self.validar_y_guardar)
 
         layout_botones.addWidget(btn_cancelar)
         layout_botones.addWidget(btn_guardar)
@@ -534,22 +857,42 @@ class DialogoNuevoProspecto(QDialog):
         layout.addStretch()
         layout.addLayout(layout_botones)
 
-    def obtener_datos(self):
-        return self.input_nombre.text(), self.input_telefono.text()
+    def validar_y_guardar(self):
+        nombre = self.input_nombre.text().strip()
+        telefono = self.input_telefono.text().strip()
 
+        # Validación de Nombre
+        if len(nombre) < 3 or not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$", nombre):
+            QMessageBox.warning(self, "Error de Validación",
+                                "El nombre debe tener al menos 3 letras y no contener números o caracteres especiales.")
+            self.input_nombre.setFocus()
+            return
+
+        # Validación de Teléfono (Solo números, exacto 10 dígitos)
+        tel_limpio = re.sub(r'\D', '', telefono)
+        if len(tel_limpio) != 10:
+            QMessageBox.warning(self, "Error de Validación",
+                                "El número de teléfono debe contener exactamente 10 dígitos válidos.")
+            self.input_telefono.setFocus()
+            return
+
+        # Si todo está bien, cerramos el diálogo con éxito
+        self.accept()
+
+    def obtener_datos(self):
+        return self.input_nombre.text().strip(), re.sub(r'\D', '', self.input_telefono.text())
 
 class PanelProspectos(QWidget):
-    """Dos pestañas: Mis Prospectos / Mis Clientes. Cada una con cards."""
-
-    PASOS = ["Contacto inicial", "Medición", "Diseño enviado", "Cotización aceptada", "Cliente"]
-
     def __init__(self, usuario_info):
         super().__init__()
         self.usuario_id = usuario_info['id']
         self.es_admin = usuario_info['rol'] == 'admin'
         self.db = GestorBD()
 
-        # Stack: página 0 = lista con pestañas, página 1 = detalle
+        # Fondo general gris clarito para el panel completo
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setStyleSheet("PanelProspectos { background-color: #F8F9FB; }")
+
         self.stack = QStackedWidget()
         layout_root = QVBoxLayout(self)
         layout_root.setContentsMargins(0, 0, 0, 0)
@@ -558,59 +901,79 @@ class PanelProspectos(QWidget):
         # --- Página 0: Lista ---
         pagina_lista = QWidget()
         layout_lista = QVBoxLayout(pagina_lista)
-        layout_lista.setContentsMargins(10, 10, 10, 10)
+        layout_lista.setContentsMargins(20, 20, 20, 20)
+        layout_lista.setSpacing(15)
 
-        # Header con Título y Botón
+        # Header
         header_layout = QHBoxLayout()
-        titulo = QLabel("Seguimiento de Prospectos y Clientes")
-        titulo.setStyleSheet("font-size: 18px; font-weight: bold; color: #2C3E50;")
+        titulo = QLabel("Seguimiento de Ventas")
+        titulo.setStyleSheet("font-size: 22px; font-weight: bold; color: #1E293B;")
 
         self.btn_nuevo = QPushButton("+ Nuevo Prospecto")
-        self.btn_nuevo.setFixedSize(140, 30)
+        self.btn_nuevo.setFixedSize(160, 36)
         self.btn_nuevo.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_nuevo.setStyleSheet("background-color: #27AE60; color: white; font-weight: bold; border-radius: 5px;")
+        self.btn_nuevo.setStyleSheet("""
+            QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
+            QPushButton:hover { background-color: #219653; }
+        """)
         self.btn_nuevo.clicked.connect(self._abrir_formulario_nuevo)
 
         header_layout.addWidget(titulo)
         header_layout.addStretch()
         header_layout.addWidget(self.btn_nuevo)
+        layout_lista.addLayout(header_layout)
 
-        layout_lista.addLayout(header_layout)  # Reemplaza el layout_lista.addWidget(titulo) anterior
-
+        # Pestañas
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
-            QTabBar::tab { height: 36px; width: 180px; font-weight: bold; }
-            QTabBar::tab:selected { color: #EF7C0F; border-bottom: 2px solid #EF7C0F; }
+            QTabWidget::pane { border: none; border-top: 1px solid #CBD5E1; }
+            QTabBar::tab { height: 40px; width: 180px; font-weight: bold; color: #64748B; background: transparent; font-size: 14px; }
+            QTabBar::tab:selected { color: #EF7C0F; border-bottom: 3px solid #EF7C0F; }
+            QTabBar::tab:hover:!selected { color: #1E293B; }
         """)
 
-        # Pestaña Prospectos
         self.scroll_prospectos = self._crear_scroll()
-        self.tabs.addTab(self.scroll_prospectos, "⏳  Prospectos")
+        self.tabs.addTab(self.scroll_prospectos, "⏳ Prospectos en curso")
 
-        # Pestaña Clientes
         self.scroll_clientes = self._crear_scroll()
-        self.tabs.addTab(self.scroll_clientes, "✅  Clientes")
+        self.tabs.addTab(self.scroll_clientes, "✅ Clientes cerrados")
 
         layout_lista.addWidget(self.tabs)
         self.stack.addWidget(pagina_lista)
 
-        # --- Página 1: Detalle (se crea dinámicamente) ---
+        # --- Página 1: Detalle ---
         self.pagina_detalle = QWidget()
         self.stack.addWidget(self.pagina_detalle)
 
         self.cargar_datos()
 
     def _crear_scroll(self):
-        """Crea un QScrollArea con un layout de cards vertical."""
+        """Crea un QScrollArea con CSS para ocultar las barras cuadradas de Windows."""
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        # Scrollbars modernas e invisibles hasta que se usan
+        scroll.setStyleSheet("""
+            QScrollArea { border: none; background: transparent; }
+            QScrollBar:vertical {
+                border: none;
+                background: transparent;
+                width: 8px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: #CBD5E1;
+                border-radius: 4px;
+                min-height: 20px;
+            }
+            QScrollBar::handle:vertical:hover { background: #94A3B8; }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+        """)
 
         contenedor = QWidget()
         contenedor.setStyleSheet("background: transparent;")
         layout = QVBoxLayout(contenedor)
-        layout.setContentsMargins(4, 8, 4, 8)
-        layout.setSpacing(10)
+        layout.setContentsMargins(5, 15, 15, 15)  # Margen derecho para que no pegue la tarjeta con la barra
+        layout.setSpacing(15)
         layout.addStretch()
 
         scroll.setWidget(contenedor)
@@ -618,13 +981,12 @@ class PanelProspectos(QWidget):
 
     def _limpiar_scroll(self, scroll):
         layout = scroll.widget().layout()
-        while layout.count() > 1:  # Deja el stretch al final
+        while layout.count() > 1:
             item = layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
     def cargar_datos(self):
-        """Refresca ambas pestañas."""
         self._limpiar_scroll(self.scroll_prospectos)
         self._limpiar_scroll(self.scroll_clientes)
 
@@ -633,15 +995,15 @@ class PanelProspectos(QWidget):
         for fila in prospectos_data:
             if self.es_admin:
                 pid, nombre, telefono, vendedor, es_cliente = fila
+                nombre_mostrar = f"{nombre} (Vendedor: {vendedor})"
             else:
                 pid, nombre, telefono, es_cliente = fila
+                nombre_mostrar = nombre
 
-            # Inicializar checklist si no existe y contar completados
-            self.db.inicializar_checklist_prospecto(pid)
-            checklist = self.db.obtener_checklist(pid)
-            completados = sum(1 for _, _, c in checklist if c)
+            # Obtenemos la información de la cita en lugar del checklist
+            cita_info = self.db.obtener_cita(pid)
 
-            tarjeta = TarjetaProspecto(pid, nombre, telefono, completados)
+            tarjeta = TarjetaProspecto(pid, nombre_mostrar, telefono, cita_info)
             tarjeta.clicked.connect(self._abrir_detalle)
 
             if es_cliente:
@@ -651,9 +1013,8 @@ class PanelProspectos(QWidget):
 
             layout.insertWidget(layout.count() - 1, tarjeta)
 
+
     def _abrir_detalle(self, prospecto_id):
-        """Muestra el panel de detalle para el prospecto seleccionado."""
-        # Buscar nombre y teléfono
         todos = self.db.obtener_prospectos(self.usuario_id, self.es_admin)
         nombre, telefono = "—", ""
         for fila in todos:
@@ -662,7 +1023,6 @@ class PanelProspectos(QWidget):
                 telefono = fila[2]
                 break
 
-        # Reemplazar página de detalle
         layout_viejo = self.pagina_detalle.layout()
         if layout_viejo:
             QWidget().setLayout(layout_viejo)
@@ -677,17 +1037,13 @@ class PanelProspectos(QWidget):
         self.stack.setCurrentIndex(1)
 
     def _volver_lista(self):
-        self.cargar_datos()  # Refresca por si cambió algún paso
+        self.cargar_datos()
         self.stack.setCurrentIndex(0)
 
     def _abrir_formulario_nuevo(self):
-            dialogo = DialogoNuevoProspecto(self)
-            if dialogo.exec():  # Si el usuario presiona "Guardar"
-                nombre, telefono = dialogo.obtener_datos()
-                if nombre:
-                    # Guardar en base de datos
-                    nuevo_id = self.db.agregar_prospecto(nombre, telefono, self.usuario_id)
-                    # Inicializar inmediatamente su checklist
-                    self.db.inicializar_checklist_prospecto(nuevo_id)
-                    # Refrescar la pantalla
-                    self.cargar_datos()
+        dialogo = DialogoNuevoProspecto(self)
+        if dialogo.exec():
+            nombre, telefono = dialogo.obtener_datos()
+            # Ya no llamamos al checklist, solo agregamos a la BD y recargamos
+            self.db.agregar_prospecto(nombre, telefono, self.usuario_id)
+            self.cargar_datos()

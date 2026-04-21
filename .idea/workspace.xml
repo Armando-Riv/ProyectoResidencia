@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="avances, cliente y prospecto">
+    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="avances prospectos">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sistema.db" beforeDir="false" afterPath="$PROJECT_DIR$/sistema.db" afterDir="false" />
@@ -152,7 +152,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776706951286</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="avances prospectos">
+      <option name="closed" value="true" />
+      <created>1776749998089</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1776749998089</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -160,6 +168,7 @@
     <MESSAGE value="avances, problemas con vendedor" />
     <MESSAGE value="avances, falta overhaul de lo grafico" />
     <MESSAGE value="avances, cliente y prospecto" />
-    <option name="LAST_COMMIT_MESSAGE" value="avances, cliente y prospecto" />
+    <MESSAGE value="avances prospectos" />
+    <option name="LAST_COMMIT_MESSAGE" value="avances prospectos" />
   </component>
 </project>
