@@ -2,7 +2,7 @@ import os, re
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QFrame, QMessageBox, QGraphicsDropShadowEffect,QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget,QProgressBar, QCheckBox, QScrollArea,
                                 QStackedWidget, QSizePolicy)
-from PySide6.QtGui import QPixmap, QIcon, QAction, QColor
+from PySide6.QtGui import QPixmap, QIcon, QAction, QColor, QPalette,QFont
 from database import GestorBD
 from PySide6.QtWidgets import QDialog,QDateEdit, QTimeEdit
 from PySide6.QtCore import Qt, QSize, Signal,QDate, QTime
@@ -583,72 +583,93 @@ class DetalleProspecto(QWidget):
         layout_header.addWidget(lbl_nombre)
         layout_header.addWidget(lbl_tel)
         layout.addWidget(card_header)
-
         # ==========================================
-        # SECCIÓN DE AGENDAR CITA (DISEÑO MEJORADO)
+        # SECCIÓN DE AGENDAR CITA (CORREGIDA)
         # ==========================================
         lbl_fase1 = QLabel("Fase 1: Agendar Cita")
         lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #1E293B; margin-top: 10px;")
         layout.addWidget(lbl_fase1)
 
         frame_cita = QFrame()
+        frame_cita.setFixedHeight(105)  # Mantiene la tarjeta compacta
         frame_cita.setStyleSheet("QFrame { background-color: white; border-radius: 12px; border: 1px solid #E2E8F0; }")
 
-        # Layout horizontal principal para la tarjeta
         layout_cita = QHBoxLayout(frame_cita)
-        layout_cita.setContentsMargins(25, 20, 25, 20)
-        layout_cita.setSpacing(25)  # Más espacio entre columnas
+        layout_cita.setContentsMargins(25, 15, 25, 15)
+        layout_cita.setSpacing(25)
+
+        # --- Estilo general para los inputs ---
+        # Quitamos fondos y bordes para que el tema "Fusion" dibuje los iconos perfectamente
+        estilo_inputs = "font-size: 14px; color: #1E293B; padding: 2px;"
+
+        # --- Creamos la paleta para colores claros ---
+        paleta_clara = QPalette()
+        paleta_clara.setColor(QPalette.ColorRole.Base, QColor("#FFFFFF"))  # Fondo
+        paleta_clara.setColor(QPalette.ColorRole.Text, QColor("#1E293B"))  # Texto
+        paleta_clara.setColor(QPalette.ColorRole.Button, QColor("#F8FAFC"))  # Botones nativos
+        paleta_clara.setColor(QPalette.ColorRole.ButtonText, QColor("#1E293B"))  # Flechas
+
+        # --- Creamos la fuente nativa en lugar de usar CSS ---
+        fuente_inputs = QFont()
+        fuente_inputs.setPointSize(11)  # Equivalente a 14px aprox.
 
         # --- Columna 1: Fecha ---
         columna_fecha = QVBoxLayout()
-        columna_fecha.setSpacing(8)
+        columna_fecha.setSpacing(5)
         lbl_fecha = QLabel("📅 Fecha:")
         lbl_fecha.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
 
         self.input_fecha = QDateEdit(QDate.currentDate())
         self.input_fecha.setCalendarPopup(True)
-        self.input_fecha.setFixedSize(140, 38)  # Damos tamaño fijo para que no se aplaste
-        self.input_fecha.setStyleSheet("""
-                    QDateEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 5px 10px; font-size: 14px; color: #1E293B; }
-                    QDateEdit:focus { border: 1px solid #EF7C0F; }
-                    QDateEdit::drop-down { border: none; width: 30px; }
+        self.input_fecha.setDisplayFormat("dd/MM/yyyy")
+        self.input_fecha.setMinimumHeight(32)
+        self.input_fecha.setMinimumWidth(120)
+        self.input_fecha.setPalette(paleta_clara)
+        self.input_fecha.setFont(fuente_inputs)  # <--- Aplicamos la fuente sin romper las flechas
+
+        calendario = self.input_fecha.calendarWidget()
+        calendario.setStyleSheet("""
+                    QCalendarWidget QWidget { alternate-background-color: #F8FAFC; background-color: #FFFFFF; color: #1E293B; }
+                    QCalendarWidget QToolButton { color: white; background-color: #2C3E50; font-weight: bold; border-radius: 4px; margin: 2px;}
+                    QCalendarWidget QAbstractItemView:enabled { background-color: #FFFFFF; color: #1E293B; selection-background-color: #27AE60; selection-color: white; }
                 """)
+
         columna_fecha.addWidget(lbl_fecha)
         columna_fecha.addWidget(self.input_fecha)
 
         # --- Columna 2: Hora ---
         columna_hora = QVBoxLayout()
-        columna_hora.setSpacing(8)
+        columna_hora.setSpacing(5)
         lbl_hora = QLabel("⏰ Hora:")
         lbl_hora.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
 
         self.input_hora = QTimeEdit(QTime.currentTime())
-        self.input_hora.setFixedSize(120, 38)
-        self.input_hora.setStyleSheet("""
-                    QTimeEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 5px 10px; font-size: 14px; color: #1E293B; }
-                    QTimeEdit:focus { border: 1px solid #EF7C0F; }
-                    QTimeEdit::up-button, QTimeEdit::down-button { width: 20px; }
-                """)
+        self.input_hora.setDisplayFormat("hh:mm AP")
+        self.input_hora.setMinimumHeight(32)
+        self.input_hora.setMinimumWidth(110)
+        self.input_hora.setPalette(paleta_clara)
+        self.input_hora.setFont(fuente_inputs)  # <--- Aplicamos la fuente sin romper las flechas
+
         columna_hora.addWidget(lbl_hora)
         columna_hora.addWidget(self.input_hora)
 
         # --- Columna 3: Botón Guardar ---
         columna_boton = QVBoxLayout()
-        columna_boton.addStretch()  # Empuja el botón hacia abajo para alinearlo con los inputs
+        columna_boton.setAlignment(Qt.AlignmentFlag.AlignBottom)
         btn_agendar = QPushButton("Guardar Cita")
         btn_agendar.setFixedSize(140, 38)
         btn_agendar.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_agendar.setStyleSheet("""
-                    QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
-                    QPushButton:hover { background-color: #219653; }
-                """)
+                QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
+                QPushButton:hover { background-color: #219653; }
+            """)
         btn_agendar.clicked.connect(self._guardar_cita)
         columna_boton.addWidget(btn_agendar)
 
-        # Ensamblar las columnas en el contenedor principal
+        # Ensamblar las columnas
         layout_cita.addLayout(columna_fecha)
         layout_cita.addLayout(columna_hora)
-        layout_cita.addStretch()  # Espacio en blanco al centro
+        layout_cita.addStretch()
         layout_cita.addLayout(columna_boton)
 
         layout.addWidget(frame_cita)
@@ -659,148 +680,29 @@ class DetalleProspecto(QWidget):
         cita_existente = self.db.obtener_cita(prospecto_id)
         if cita_existente:
             fecha_str, hora_str = cita_existente
-            self.input_fecha.setDate(QDate.fromString(fecha_str, Qt.DateFormat.ISODate))
-            try:
-                hora_partes = hora_str.split(':')
-                if len(hora_partes) >= 2:
-                    self.input_hora.setTime(QTime(int(hora_partes[0]), int(hora_partes[1])))
-            except:
-                pass
+            # Se convierte string de BD (dd/MM/yyyy) a QDate
+            self.input_fecha.setDate(QDate.fromString(fecha_str, "dd/MM/yyyy"))
+            self.input_hora.setTime(QTime.fromString(hora_str, "hh:mm AP"))
 
             lbl_fase1.setText("Fase 1: Cita Agendada ✅")
             lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #27AE60; margin-top: 10px;")
             btn_agendar.setText("Actualizar Cita")
             btn_agendar.setStyleSheet("""
-                        QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
-                        QPushButton:hover { background-color: #C06513; }
-                    """)
-        # ==========================================
-            # ==========================================
-            # SECCIÓN DE AGENDAR CITA (COMPACTA Y CON CALENDARIO)
-            # ==========================================
-            lbl_fase1 = QLabel("Fase 1: Agendar Cita")
-            lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #1E293B; margin-top: 10px;")
-            layout.addWidget(lbl_fase1)
-
-            frame_cita = QFrame()
-            frame_cita.setFixedHeight(105)  # <--- SOLUCIÓN: Fijamos la altura para que no se estire
-            frame_cita.setStyleSheet(
-                "QFrame { background-color: white; border-radius: 12px; border: 1px solid #E2E8F0; }")
-
-            layout_cita = QHBoxLayout(frame_cita)
-            layout_cita.setContentsMargins(25, 15, 25, 15)
-            layout_cita.setSpacing(25)
-
-            # --- Columna 1: Fecha ---
-            columna_fecha = QVBoxLayout()
-            columna_fecha.setSpacing(5)
-            lbl_fecha = QLabel("📅 Fecha:")
-            lbl_fecha.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
-
-            self.input_fecha = QDateEdit(QDate.currentDate())
-            self.input_fecha.setCalendarPopup(True)  # Esto activa el mini-calendario flotante
-            self.input_fecha.setFixedSize(140, 35)
-            # Quitamos la configuración de "drop-down" para que PySide dibuje la flecha del calendario
-            self.input_fecha.setStyleSheet("""
-                    QDateEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 5px 10px; font-size: 14px; color: #1E293B; }
-                    QDateEdit:focus { border: 1px solid #EF7C0F; }
+                    QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
+                    QPushButton:hover { background-color: #C06513; }
                 """)
 
-            # Le damos un toque moderno al calendario emergente
-            calendario = self.input_fecha.calendarWidget()
-            calendario.setStyleSheet("QCalendarWidget QWidget { background-color: white; color: #1E293B; }")
-
-            columna_fecha.addWidget(lbl_fecha)
-            columna_fecha.addWidget(self.input_fecha)
-
-            # --- Columna 2: Hora ---
-            columna_hora = QVBoxLayout()
-            columna_hora.setSpacing(5)
-            lbl_hora = QLabel("⏰ Hora:")
-            lbl_hora.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
-
-            self.input_hora = QTimeEdit(QTime.currentTime())
-            self.input_hora.setFixedSize(120, 35)
-            self.input_hora.setStyleSheet("""
-                    QTimeEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 5px 10px; font-size: 14px; color: #1E293B; }
-                    QTimeEdit:focus { border: 1px solid #EF7C0F; }
-                """)
-            columna_hora.addWidget(lbl_hora)
-            columna_hora.addWidget(self.input_hora)
-
-            # --- Columna 3: Botón Guardar ---
-            columna_boton = QVBoxLayout()
-            columna_boton.setAlignment(
-                Qt.AlignmentFlag.AlignBottom)  # Empuja el botón hacia abajo para alinearlo con los inputs
-            btn_agendar = QPushButton("Guardar Cita")
-            btn_agendar.setFixedSize(140, 35)
-            btn_agendar.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_agendar.setStyleSheet("""
-                    QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
-                    QPushButton:hover { background-color: #219653; }
-                """)
-            btn_agendar.clicked.connect(self._guardar_cita)
-            columna_boton.addWidget(btn_agendar)
-
-            # Ensamblar las columnas
-            layout_cita.addLayout(columna_fecha)
-            layout_cita.addLayout(columna_hora)
-            layout_cita.addStretch()
-            layout_cita.addLayout(columna_boton)
-
-            layout.addWidget(frame_cita)
-
-            # --------------------------------------------------------
-            # Lógica visual para cuando ya existe una cita agendada
-            # --------------------------------------------------------
-            cita_existente = self.db.obtener_cita(prospecto_id)
-            if cita_existente:
-                fecha_str, hora_str = cita_existente
-                self.input_fecha.setDate(QDate.fromString(fecha_str, Qt.DateFormat.ISODate))
-                try:
-                    hora_partes = hora_str.split(':')
-                    if len(hora_partes) >= 2:
-                        self.input_hora.setTime(QTime(int(hora_partes[0]), int(hora_partes[1])))
-                except:
-                    pass
-
-                lbl_fase1.setText("Fase 1: Cita Agendada ✅")
-                lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #27AE60; margin-top: 10px;")
-                btn_agendar.setText("Actualizar Cita")
-                btn_agendar.setStyleSheet("""
-                        QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
-                        QPushButton:hover { background-color: #C06513; }
-                    """)
-
-            layout.addStretch()  # <--- MUY IMPORTANTE: Esto empuja la tarjeta hacia arriba y evita que se estire
-            # ==========================================
-        # Cargar datos existentes si ya hay cita
-        cita_existente = self.db.obtener_cita(prospecto_id)
-        if cita_existente:
-            fecha_str, hora_str = cita_existente
-            # Formateamos los strings devuelta a QDate y QTime
-            self.input_fecha.setDate(QDate.fromString(fecha_str, Qt.DateFormat.ISODate))
-            # Ajuste de conversión de hora para evitar errores de PySide
-            try:
-                hora_partes = hora_str.split(':')
-                if len(hora_partes) >= 2:
-                    self.input_hora.setTime(QTime(int(hora_partes[0]), int(hora_partes[1])))
-            except:
-                pass
-
-            lbl_fase1.setText("Fase 1: Cita Agendada ✅")
-            lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #27AE60; margin-top: 10px;")
-
+        # ESTO ES LO QUE EMPUJA TODO HACIA ARRIBA Y EVITA QUE SE ESTIRE
         layout.addStretch()
 
     def _guardar_cita(self):
-        fecha = self.input_fecha.date().toString(Qt.DateFormat.ISODate)
-        hora = self.input_hora.time().toString("HH:mm")  # Guardamos formato simple 24h
+        # Guardamos usando los mismos formatos para poder leerlos después
+        fecha = self.input_fecha.date().toString("dd/MM/yyyy")
+        hora = self.input_hora.time().toString("hh:mm AP")
 
         self.db.agendar_cita(self.prospecto_id, fecha, hora)
         QMessageBox.information(self, "Éxito", "La cita se ha agendado correctamente.")
-        self.cerrado.emit()  # Regresamos a la lista para refrescar la tarjeta
-
+        self.cerrado.emit()
 
 # -------------------------------------------------------
 # DIÁLOGO NUEVO PROSPECTO Y PANEL PRINCIPAL
