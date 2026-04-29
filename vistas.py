@@ -1,8 +1,12 @@
 import os, re
+
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-                               QPushButton, QFrame, QMessageBox, QGraphicsDropShadowEffect,QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget,QProgressBar, QCheckBox, QScrollArea,
-                                QStackedWidget, QSizePolicy)
-from PySide6.QtGui import QPixmap, QIcon, QAction, QColor
+                               QPushButton, QFrame, QMessageBox, QGraphicsDropShadowEffect,
+                               QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget,
+                               QDateEdit, QTimeEdit, QScrollArea, QStackedWidget,
+                               QGridLayout, QComboBox, QRadioButton, QButtonGroup, QGroupBox,QSizePolicy,QStackedWidget,QProgressBar, QCheckBox,QInputDialog)
+
+from PySide6.QtGui import QPixmap, QIcon, QAction, QColor,QIntValidator
 from database import GestorBD
 from PySide6.QtWidgets import QDialog,QDateEdit, QTimeEdit
 from PySide6.QtCore import Qt, QSize, Signal,QDate, QTime
@@ -559,10 +563,21 @@ class DetalleProspecto(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet("DetalleProspecto { background-color: #F8F9FB; }")
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(15)
+        # Usamos un ScrollArea principal por si la pantalla del vendedor es pequeña
+        layout_principal = QVBoxLayout(self)
+        layout_principal.setContentsMargins(0, 0, 0, 0)
 
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+
+        contenedor_scroll = QWidget()
+        contenedor_scroll.setStyleSheet("background: transparent;")
+        self.layout = QVBoxLayout(contenedor_scroll)
+        self.layout.setContentsMargins(30, 25, 30, 25)
+        self.layout.setSpacing(15)
+
+        # --- BOTÓN VOLVER Y HEADER ---
         btn_volver = QPushButton("← Volver a la lista")
         btn_volver.setFixedSize(140, 35)
         btn_volver.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -571,7 +586,7 @@ class DetalleProspecto(QWidget):
             QPushButton:hover { background-color: #EF7C0F; color: white; }
         """)
         btn_volver.clicked.connect(self.cerrado.emit)
-        layout.addWidget(btn_volver)
+        self.layout.addWidget(btn_volver)
 
         card_header = QFrame()
         card_header.setStyleSheet("background-color: white; border-radius: 10px; border: 1px solid #E2E8F0;")
@@ -582,13 +597,26 @@ class DetalleProspecto(QWidget):
         lbl_tel.setStyleSheet("font-size: 14px; font-weight: bold; color: #64748B; border: none;")
         layout_header.addWidget(lbl_nombre)
         layout_header.addWidget(lbl_tel)
-        layout.addWidget(card_header)
+        self.layout.addWidget(card_header)
+
         # ==========================================
-        # SECCIÓN DE AGENDAR CITA (DISEÑO DEFINITIVO)
+        # FASE 1: AGENDAR CITA (Se mantiene intacta)
         # ==========================================
+        self._construir_fase1()
+
+        # ==========================================
+        # FASE 2: LEVANTAMIENTO Y MEDICIÓN
+        # ==========================================
+        self._construir_fase2()
+
+        self.layout.addStretch()
+        scroll.setWidget(contenedor_scroll)
+        layout_principal.addWidget(scroll)
+
+    def _construir_fase1(self):
         lbl_fase1 = QLabel("Fase 1: Agendar Cita")
         lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #1E293B; margin-top: 10px;")
-        layout.addWidget(lbl_fase1)
+        self.layout.addWidget(lbl_fase1)
 
         frame_cita = QFrame()
         frame_cita.setFixedHeight(105)
@@ -598,155 +626,430 @@ class DetalleProspecto(QWidget):
         layout_cita.setContentsMargins(25, 15, 25, 15)
         layout_cita.setSpacing(25)
 
-        # --- CSS A PRUEBA DE BALAS PARA DIBUJAR LAS FLECHAS ---
-        # --- REEMPLAZA el bloque estilo_inputs (líneas 602-652) con este ---
-        # Rutas a los iconos (igual que haces con ver.png / ocultar.png)
-        ruta_arrow_down = os.path.join(os.path.dirname(__file__), 'arrow_down.png').replace("\\", "/")
-        ruta_arrow_up = os.path.join(os.path.dirname(__file__), 'arrow_up.png').replace("\\", "/")
-
-        estilo_inputs = f"""
-            QDateEdit, QTimeEdit {{
-                background-color: #FFFFFF;
-                border: 1px solid #CBD5E1;
-                border-radius: 5px;
-                padding: 4px 10px;
-                color: #1E293B;
-                font-size: 14px;
-            }}
-            QDateEdit:focus, QTimeEdit:focus {{ border: 1px solid #EF7C0F; }}
-
-            /* -- Botón del calendario (DateEdit) -- */
-            QDateEdit::drop-down {{
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 28px;
-                border-left: 1px solid #CBD5E1;
-                background-color: #F8FAFC;
-                border-top-right-radius: 4px;
-                border-bottom-right-radius: 4px;
-            }}
-            QDateEdit::down-arrow {{
-                image: url({ruta_arrow_down});
-                width: 10px;
-                height: 6px;
-            }}
-
-            /* -- Flechas del reloj (TimeEdit) -- */
-            QTimeEdit::up-button {{
-                subcontrol-origin: border;
-                subcontrol-position: top right;
-                width: 28px;
-                background-color: #F8FAFC;
-                border-left: 1px solid #CBD5E1;
-                border-top-right-radius: 4px;
-                border-bottom: 1px solid #CBD5E1;
-            }}
-            QTimeEdit::down-button {{
-                subcontrol-origin: border;
-                subcontrol-position: bottom right;
-                width: 28px;
-                background-color: #F8FAFC;
-                border-left: 1px solid #CBD5E1;
-                border-bottom-right-radius: 4px;
-            }}
-            QTimeEdit::up-arrow {{
-                image: url({ruta_arrow_up});
-                width: 10px;
-                height: 6px;
-            }}
-            QTimeEdit::down-arrow {{
-                image: url({ruta_arrow_down});
-                width: 10px;
-                height: 6px;
-            }}
+        estilo_inputs = """
+            QDateEdit, QTimeEdit { background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 5px; padding: 4px 10px; color: #1E293B; font-size: 14px; }
+            QDateEdit:focus, QTimeEdit:focus { border: 1px solid #EF7C0F; }
+            QDateEdit::drop-down { subcontrol-origin: padding; subcontrol-position: top right; width: 25px; border-left: 1px solid #CBD5E1; background-color: #F8FAFC; border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+            QDateEdit::down-arrow { image: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #475569; width: 0px; height: 0px; }
+            QTimeEdit::up-button, QTimeEdit::down-button { subcontrol-origin: border; width: 25px; background-color: #F8FAFC; border-left: 1px solid #CBD5E1; }
+            QTimeEdit::up-button { subcontrol-position: top right; border-top-right-radius: 4px; border-bottom: 1px solid #CBD5E1; }
+            QTimeEdit::down-button { subcontrol-position: bottom right; border-bottom-right-radius: 4px; }
+            QTimeEdit::up-arrow { image: none; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid #475569; width: 0px; height: 0px; }
+            QTimeEdit::down-arrow { image: none; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid #475569; width: 0px; height: 0px; }
         """
-        # --- Columna 1: Fecha ---
+
         columna_fecha = QVBoxLayout()
         columna_fecha.setSpacing(5)
         lbl_fecha = QLabel("📅 Fecha:")
         lbl_fecha.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
-
         self.input_fecha = QDateEdit(QDate.currentDate())
         self.input_fecha.setCalendarPopup(True)
         self.input_fecha.setDisplayFormat("dd/MM/yyyy")
-        self.input_fecha.setFixedSize(140, 36)  # Regresamos a FixedSize para que coincida con el botón
+        self.input_fecha.setFixedSize(140, 36)
         self.input_fecha.setStyleSheet(estilo_inputs)
-
-        calendario = self.input_fecha.calendarWidget()
-        calendario.setStyleSheet("""
-                    QCalendarWidget QWidget { alternate-background-color: #F8FAFC; background-color: #FFFFFF; color: #1E293B; }
-                    QCalendarWidget QToolButton { color: white; background-color: #2C3E50; font-weight: bold; border-radius: 4px; margin: 2px;}
-                    QCalendarWidget QAbstractItemView:enabled { background-color: #FFFFFF; color: #1E293B; selection-background-color: #27AE60; selection-color: white; }
-                """)
-
         columna_fecha.addWidget(lbl_fecha)
         columna_fecha.addWidget(self.input_fecha)
 
-        # --- Columna 2: Hora ---
         columna_hora = QVBoxLayout()
         columna_hora.setSpacing(5)
         lbl_hora = QLabel("⏰ Hora:")
         lbl_hora.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; border: none;")
-
         self.input_hora = QTimeEdit(QTime.currentTime())
         self.input_hora.setDisplayFormat("hh:mm AP")
         self.input_hora.setFixedSize(120, 36)
         self.input_hora.setStyleSheet(estilo_inputs)
-
         columna_hora.addWidget(lbl_hora)
         columna_hora.addWidget(self.input_hora)
 
-        # --- Columna 3: Botón Guardar ---
         columna_boton = QVBoxLayout()
         columna_boton.setAlignment(Qt.AlignmentFlag.AlignBottom)
         btn_agendar = QPushButton("Guardar Cita")
         btn_agendar.setFixedSize(140, 36)
         btn_agendar.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_agendar.setStyleSheet("""
-                    QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
-                    QPushButton:hover { background-color: #219653; }
-                """)
+        btn_agendar.setStyleSheet(
+            "QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; } QPushButton:hover { background-color: #219653; }")
         btn_agendar.clicked.connect(self._guardar_cita)
         columna_boton.addWidget(btn_agendar)
 
-        # Ensamblar las columnas
         layout_cita.addLayout(columna_fecha)
         layout_cita.addLayout(columna_hora)
         layout_cita.addStretch()
         layout_cita.addLayout(columna_boton)
+        self.layout.addWidget(frame_cita)
 
-        layout.addWidget(frame_cita)
-
-        # Lógica visual para cuando ya existe una cita agendada
-        cita_existente = self.db.obtener_cita(prospecto_id)
+        cita_existente = self.db.obtener_cita(self.prospecto_id)
         if cita_existente:
             fecha_str, hora_str = cita_existente
             self.input_fecha.setDate(QDate.fromString(fecha_str, "dd/MM/yyyy"))
             self.input_hora.setTime(QTime.fromString(hora_str, "hh:mm AP"))
-
             lbl_fase1.setText("Fase 1: Cita Agendada ✅")
             lbl_fase1.setStyleSheet("font-size: 16px; font-weight: bold; color: #27AE60; margin-top: 10px;")
             btn_agendar.setText("Actualizar Cita")
-            btn_agendar.setStyleSheet("""
-                        QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; }
-                        QPushButton:hover { background-color: #C06513; }
-                    """)
-
-        layout.addStretch()
+            btn_agendar.setStyleSheet(
+                "QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; border: none; } QPushButton:hover { background-color: #C06513; }")
 
     def _guardar_cita(self):
-        # Guardamos usando los mismos formatos para poder leerlos después
         fecha = self.input_fecha.date().toString("dd/MM/yyyy")
         hora = self.input_hora.time().toString("hh:mm AP")
-
         self.db.agendar_cita(self.prospecto_id, fecha, hora)
         QMessageBox.information(self, "Éxito", "La cita se ha agendado correctamente.")
         self.cerrado.emit()
 
-# -------------------------------------------------------
-# DIÁLOGO NUEVO PROSPECTO Y PANEL PRINCIPAL
-# -------------------------------------------------------
+    def _construir_fase2(self):
+        lbl_fase2 = QLabel("Fase 2: Levantamiento y Medición")
+        lbl_fase2.setStyleSheet("font-size: 16px; font-weight: bold; color: #1E293B; margin-top: 20px;")
+        self.layout.addWidget(lbl_fase2)
 
+        self.tabs_medicion = QTabWidget()
+        self.tabs_medicion.setStyleSheet("""
+            QTabWidget::pane { border: 1px solid #E2E8F0; background: white; border-radius: 8px; }
+            QTabBar::tab { background: #F1F5F9; color: #64748B; padding: 10px 15px; font-weight: bold; border-top-left-radius: 6px; border-top-right-radius: 6px; margin-right: 2px; }
+            QTabBar::tab:selected { background: white; color: #EF7C0F; border-bottom: 2px solid white; }
+        """)
+
+        # --- ESTILOS ESTRICTOS CORREGIDOS ---
+        estilo_label = "font-size: 13px; font-weight: bold; color: #475569;"
+        estilo_input = """
+            QLineEdit, QComboBox, QDateEdit { 
+                background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 5px; 
+                padding: 6px; color: #1E293B; font-size: 13px;
+            }
+            QLineEdit:focus, QComboBox:focus, QDateEdit:focus { border: 1px solid #EF7C0F; }
+            QDateEdit::drop-down { border: none; width: 20px; }
+
+            /* Corrección para que el menú desplegable no se vea negro en modo oscuro */
+            QComboBox QAbstractItemView { 
+                background-color: #FFFFFF; 
+                color: #1E293B; 
+                selection-background-color: #27AE60; 
+                selection-color: white; 
+                outline: none;
+            }
+        """
+
+        def crear_label(texto):
+            lbl = QLabel(texto)
+            lbl.setStyleSheet(estilo_label)
+            return lbl
+
+        # --- Pestaña 1: Datos Generales ---
+        tab_generales = QWidget()
+        layout_gen = QGridLayout(tab_generales)
+        layout_gen.setContentsMargins(20, 20, 20, 20)
+        layout_gen.setSpacing(15)
+
+        self.in_fecha_visita = QDateEdit(QDate.currentDate());
+        self.in_fecha_visita.setCalendarPopup(True);
+        self.in_fecha_visita.setDisplayFormat("dd/MM/yyyy");
+        self.in_fecha_visita.setStyleSheet(estilo_input)
+        self.cb_pago_visita = QComboBox();
+        self.cb_pago_visita.addItems(["NO", "SÍ"]);
+        self.cb_pago_visita.setStyleSheet(estilo_input)
+
+        # Validadores Numéricos
+        from PySide6.QtGui import QIntValidator  # Aseguramos la importación aquí por si acaso
+        validador_dinero = QIntValidator(0, 999999)
+
+        self.in_importe_visita = QLineEdit();
+        self.in_importe_visita.setPlaceholderText("$");
+        self.in_importe_visita.setValidator(validador_dinero);
+        self.in_importe_visita.setStyleSheet(estilo_input)
+        self.in_importe_3d = QLineEdit();
+        self.in_importe_3d.setPlaceholderText("$");
+        self.in_importe_3d.setValidator(validador_dinero);
+        self.in_importe_3d.setStyleSheet(estilo_input)
+
+        self.in_fraccionamiento = QLineEdit();
+        self.in_fraccionamiento.setStyleSheet(estilo_input)
+        self.in_prototipo = QLineEdit();
+        self.in_prototipo.setPlaceholderText("Ej. Modelo Albatros");
+        self.in_prototipo.setStyleSheet(estilo_input)
+        self.in_direccion = QLineEdit();
+        self.in_direccion.setStyleSheet(estilo_input)
+
+        self.cb_vive_ahi = QComboBox();
+        self.cb_vive_ahi.addItems(["SÍ", "NO"]);
+        self.cb_vive_ahi.setStyleSheet(estilo_input)
+        self.cb_entero = QComboBox();
+        self.cb_entero.addItems(["Redes Sociales", "Recomendación", "Pasó por el local", "Otro"]);
+        self.cb_entero.setStyleSheet(estilo_input)
+        self.cb_entero.currentTextChanged.connect(self._manejar_opcion_otro)
+
+        layout_gen.addWidget(crear_label("Fecha Visita:"), 0, 0)
+        layout_gen.addWidget(self.in_fecha_visita, 0, 1)
+        layout_gen.addWidget(crear_label("¿Pagó Visita Técnica?:"), 0, 2)
+        layout_gen.addWidget(self.cb_pago_visita, 0, 3)
+
+        layout_gen.addWidget(crear_label("Importe Visita:"), 1, 0)
+        layout_gen.addWidget(self.in_importe_visita, 1, 1)
+        layout_gen.addWidget(crear_label("Importe 3D:"), 1, 2)
+        layout_gen.addWidget(self.in_importe_3d, 1, 3)
+
+        layout_gen.addWidget(crear_label("Fraccionamiento:"), 2, 0)
+        layout_gen.addWidget(self.in_fraccionamiento, 2, 1)
+        layout_gen.addWidget(crear_label("Modelo/Prototipo:"), 2, 2)
+        layout_gen.addWidget(self.in_prototipo, 2, 3)
+
+        layout_gen.addWidget(crear_label("Dirección Exacta:"), 3, 0)
+        layout_gen.addWidget(self.in_direccion, 3, 1, 1, 3)
+
+        layout_gen.addWidget(crear_label("¿Vive ahí?:"), 4, 0)
+        layout_gen.addWidget(self.cb_vive_ahi, 4, 1)
+        layout_gen.addWidget(crear_label("¿Cómo se enteró?:"), 4, 2)
+        layout_gen.addWidget(self.cb_entero, 4, 3)
+
+        self.tabs_medicion.addTab(tab_generales, "📝 Generales")
+
+        # --- Pestaña 2: Diseño y Presupuesto ---
+        tab_diseno = QWidget()
+        layout_diseno = QGridLayout(tab_diseno)
+        layout_diseno.setContentsMargins(20, 20, 20, 20)
+        layout_diseno.setSpacing(15)
+
+        self.cb_presupuesto = QComboBox();
+        self.cb_presupuesto.addItems(
+            ["$60k - $80k", "$80k - $120k", "$120k - $200k", "$200k - $250k", "$250k - $300k", "Más de $300k"]);
+        self.cb_presupuesto.setStyleSheet(estilo_input)
+        self.cb_equipos_inc = QComboBox();
+        self.cb_equipos_inc.addItems(["SÍ", "NO"]);
+        self.cb_equipos_inc.setStyleSheet(estilo_input)
+        self.cb_facilidades = QComboBox();
+        self.cb_facilidades.addItems(["NA", "Etapas", "Parcialidades", "MSI"]);
+        self.cb_facilidades.setStyleSheet(estilo_input)
+
+        self.cb_ya_tiene = QComboBox();
+        self.cb_ya_tiene.addItems(["NO", "SÍ"]);
+        self.cb_ya_tiene.setStyleSheet(estilo_input)
+        self.cb_distribucion = QComboBox();
+        self.cb_distribucion.addItems(["Barra", "Isla", "Lineal", "Forma L", "Forma U", "NA"]);
+        self.cb_distribucion.setStyleSheet(estilo_input)
+        self.cb_altura = QComboBox();
+        self.cb_altura.addItems(["2.40", "2.20", "Otra"]);
+        self.cb_altura.setStyleSheet(estilo_input)
+        self.cb_plafon = QComboBox();
+        self.cb_plafon.addItems(["NO", "SÍ"]);
+        self.cb_plafon.setStyleSheet(estilo_input)
+
+        layout_diseno.addWidget(crear_label("Rango de Presupuesto:"), 0, 0)
+        layout_diseno.addWidget(self.cb_presupuesto, 0, 1)
+        layout_diseno.addWidget(crear_label("¿Contempla equipos?:"), 0, 2)
+        layout_diseno.addWidget(self.cb_equipos_inc, 0, 3)
+
+        layout_diseno.addWidget(crear_label("Facilidades de pago:"), 1, 0)
+        layout_diseno.addWidget(self.cb_facilidades, 1, 1)
+
+        layout_diseno.addWidget(crear_label("¿Ya tiene cocina?:"), 2, 0)
+        layout_diseno.addWidget(self.cb_ya_tiene, 2, 1)
+        layout_diseno.addWidget(crear_label("Distribución deseada:"), 2, 2)
+        layout_diseno.addWidget(self.cb_distribucion, 2, 3)
+
+        layout_diseno.addWidget(crear_label("Altura deseada:"), 3, 0)
+        layout_diseno.addWidget(self.cb_altura, 3, 1)
+        layout_diseno.addWidget(crear_label("¿Desea plafón con luz?:"), 3, 2)
+        layout_diseno.addWidget(self.cb_plafon, 3, 3)
+
+        layout_diseno.setRowStretch(4, 1)
+        self.tabs_medicion.addTab(tab_diseno, "📐 Diseño y Presupuesto")
+
+        # --- Pestaña 3: Acabados ---
+        tab_acabados = QWidget()
+        layout_aca = QGridLayout(tab_acabados)
+        layout_aca.setContentsMargins(20, 20, 20, 20)
+        layout_aca.setSpacing(15)
+
+        self.in_puertas1 = QLineEdit();
+        self.in_puertas1.setStyleSheet(estilo_input)
+        self.in_puertas2 = QLineEdit();
+        self.in_puertas2.setStyleSheet(estilo_input)
+        self.in_cubierta_a = QLineEdit();
+        self.in_cubierta_a.setStyleSheet(estilo_input)
+        self.in_cubierta_b = QLineEdit();
+        self.in_cubierta_b.setStyleSheet(estilo_input)
+        self.in_jaladeras = QLineEdit();
+        self.in_jaladeras.setStyleSheet(estilo_input)
+        self.cb_zoclo = QComboBox();
+        self.cb_zoclo.addItems(["NEGRO", "INOX", "CONCRETO", "OTRO"]);
+        self.cb_zoclo.setStyleSheet(estilo_input)
+        self.in_extras = QLineEdit();
+        self.in_extras.setStyleSheet(estilo_input)
+
+        layout_aca.addWidget(crear_label("Opción 1 Puertas:"), 0, 0)
+        layout_aca.addWidget(self.in_puertas1, 0, 1)
+        layout_aca.addWidget(crear_label("Opción 2 Puertas:"), 1, 0)
+        layout_aca.addWidget(self.in_puertas2, 1, 1)
+
+        layout_aca.addWidget(crear_label("Cubierta A:"), 2, 0)
+        layout_aca.addWidget(self.in_cubierta_a, 2, 1)
+        layout_aca.addWidget(crear_label("Cubierta B:"), 3, 0)
+        layout_aca.addWidget(self.in_cubierta_b, 3, 1)
+
+        layout_aca.addWidget(crear_label("Jaladeras:"), 4, 0)
+        layout_aca.addWidget(self.in_jaladeras, 4, 1)
+        layout_aca.addWidget(crear_label("Zoclo / Base:"), 5, 0)
+        layout_aca.addWidget(self.cb_zoclo, 5, 1)
+
+        layout_aca.addWidget(crear_label("Extras:"), 6, 0)
+        layout_aca.addWidget(self.in_extras, 6, 1)
+
+        self.tabs_medicion.addTab(tab_acabados, "🎨 Acabados")
+
+        # --- Pestaña 4: Equipamiento ---
+        tab_equipos = QWidget()
+        layout_equipos = QGridLayout(tab_equipos)
+        layout_equipos.setContentsMargins(20, 20, 20, 20)
+        layout_equipos.setSpacing(10)
+
+        equipos_lista = [
+            ("Tarja", "Ej: 1 o 2 tinas..."),
+            ("Monomando", "Especificaciones..."),
+            ("Horno", "Gas/Eléctrico, 60/80cm..."),
+            ("Refrigerador", "Medidas, modelo..."),
+            ("Estufa/Parrilla", "Inducción/Gas, 90cm..."),
+            ("Campana", "Empotre, diseño..."),
+            ("Microondas", "Especificaciones..."),
+            ("Lavavajillas", "Especificaciones..."),
+            ("Triturador", "Especificaciones..."),
+            ("Filtro de agua", "Especificaciones...")
+        ]
+        self.inputs_equipos = {}
+
+        layout_equipos.addWidget(crear_label("EQUIPO"), 0, 0)
+        layout_equipos.addWidget(crear_label("ESTADO"), 0, 1)
+        layout_equipos.addWidget(crear_label("ESPECIFICACIONES / DETALLES"), 0, 2)
+
+        for i, (equipo, placeholder) in enumerate(equipos_lista, start=1):
+            layout_equipos.addWidget(crear_label(equipo), i, 0)
+            cb_estado = QComboBox();
+            cb_estado.addItems(["No usa", "Proponer", "Ya tiene"]);
+            cb_estado.setStyleSheet(estilo_input)
+            in_detalle = QLineEdit();
+            in_detalle.setPlaceholderText(placeholder);
+            in_detalle.setStyleSheet(estilo_input)
+            self.inputs_equipos[equipo] = (cb_estado, in_detalle)
+            layout_equipos.addWidget(cb_estado, i, 1)
+            layout_equipos.addWidget(in_detalle, i, 2)
+
+        self.tabs_medicion.addTab(tab_equipos, "🔌 Equipos")
+        self.layout.addWidget(self.tabs_medicion)
+
+        # --- Botón para guardar ---
+        btn_guardar_fase2 = QPushButton("Guardar Formulario de Medición")
+        btn_guardar_fase2.setFixedHeight(40)
+        btn_guardar_fase2.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_guardar_fase2.setStyleSheet(
+            "QPushButton { background-color: #2C3E50; color: white; font-weight: bold; font-size: 14px; border-radius: 6px; margin-top: 10px; } QPushButton:hover { background-color: #1A252F; }")
+        btn_guardar_fase2.clicked.connect(self._guardar_medicion)
+        self.layout.addWidget(btn_guardar_fase2)
+
+        self._cargar_datos_medicion()
+
+    def _manejar_opcion_otro(self, texto):
+        if texto == "Otro":
+            from PySide6.QtWidgets import QInputDialog
+            nuevo_valor, ok = QInputDialog.getText(self, "Especificar", "¿Cómo se enteró de nosotros?")
+            if ok and nuevo_valor.strip():
+                combo = self.sender()
+                combo.insertItem(combo.count() - 1, nuevo_valor.strip())
+                combo.setCurrentText(nuevo_valor.strip())
+            else:
+                self.sender().setCurrentIndex(0)  # Si cancela, lo regresamos a la primera opción
+
+    def _guardar_medicion(self):
+        datos_generales = (
+            self.in_fecha_visita.date().toString("dd/MM/yyyy"),
+            self.cb_pago_visita.currentText(),
+            self.in_importe_visita.text(),
+            self.in_importe_3d.text(),
+            self.in_fraccionamiento.text(),
+            self.in_prototipo.text(),
+            self.cb_vive_ahi.currentText(),
+            self.in_direccion.text(),
+            self.cb_entero.currentText(),
+            ""  # Mantenemos el espacio vacío en BD por la eliminación de "cuando compra"
+        )
+
+        presupuesto = {
+            "nivel": self.cb_presupuesto.currentText(),
+            "equipos_incluidos": self.cb_equipos_inc.currentText(),
+            "facilidades": self.cb_facilidades.currentText()
+        }
+
+        distribucion = {
+            "ya_tiene": self.cb_ya_tiene.currentText(),
+            "tipo": self.cb_distribucion.currentText(),
+            "altura": self.cb_altura.currentText(),
+            "plafon": self.cb_plafon.currentText()
+        }
+
+        acabados = {
+            "puertas_1": self.in_puertas1.text(),
+            "puertas_2": self.in_puertas2.text(),
+            "cubierta_a": self.in_cubierta_a.text(),
+            "cubierta_b": self.in_cubierta_b.text(),
+            "jaladeras": self.in_jaladeras.text(),
+            "zoclo": self.cb_zoclo.currentText(),
+            "extras": self.in_extras.text()
+        }
+
+        equipos = {}
+        for nombre, (cb_estado, in_detalle) in self.inputs_equipos.items():
+            equipos[nombre] = {
+                "estado": cb_estado.currentText(),
+                "detalle": in_detalle.text()
+            }
+
+        self.db.guardar_medicion(self.prospecto_id, datos_generales, presupuesto, distribucion, acabados, equipos)
+        QMessageBox.information(self, "Guardado",
+                                "Formulario de medición guardado correctamente.\n¡Listo para generar PDF!")
+
+    def _cargar_datos_medicion(self):
+        datos = self.db.obtener_medicion(self.prospecto_id)
+        if datos:
+            (fv, pv, iv, i3d, frac, proto, vive, direc, entero, compra,
+             presupuesto, distribucion, acabados, equipos) = datos
+
+            if fv: self.in_fecha_visita.setDate(QDate.fromString(fv, "dd/MM/yyyy"))
+            if pv: self.cb_pago_visita.setCurrentText(pv)
+            if iv: self.in_importe_visita.setText(iv)
+            if i3d: self.in_importe_3d.setText(i3d)
+            if frac: self.in_fraccionamiento.setText(frac)
+            if proto: self.in_prototipo.setText(proto)
+            if vive: self.cb_vive_ahi.setCurrentText(vive)
+            if direc: self.in_direccion.setText(direc)
+
+            if entero:
+                # Si el valor guardado no está en la lista estándar, lo agregamos temporalmente
+                if self.cb_entero.findText(entero) == -1:
+                    self.cb_entero.insertItem(self.cb_entero.count() - 1, entero)
+                self.cb_entero.setCurrentText(entero)
+
+            if presupuesto:
+                if "nivel" in presupuesto: self.cb_presupuesto.setCurrentText(presupuesto["nivel"])
+                if "equipos_incluidos" in presupuesto: self.cb_equipos_inc.setCurrentText(
+                    presupuesto["equipos_incluidos"])
+                if "facilidades" in presupuesto: self.cb_facilidades.setCurrentText(presupuesto["facilidades"])
+
+            if distribucion:
+                if "ya_tiene" in distribucion: self.cb_ya_tiene.setCurrentText(distribucion["ya_tiene"])
+                if "tipo" in distribucion: self.cb_distribucion.setCurrentText(distribucion["tipo"])
+                if "altura" in distribucion: self.cb_altura.setCurrentText(distribucion["altura"])
+                if "plafon" in distribucion: self.cb_plafon.setCurrentText(distribucion["plafon"])
+
+            if acabados:
+                if "puertas_1" in acabados: self.in_puertas1.setText(acabados["puertas_1"])
+                if "puertas_2" in acabados: self.in_puertas2.setText(acabados["puertas_2"])
+                if "cubierta_a" in acabados: self.in_cubierta_a.setText(acabados["cubierta_a"])
+                if "cubierta_b" in acabados: self.in_cubierta_b.setText(acabados["cubierta_b"])
+                if "jaladeras" in acabados: self.in_jaladeras.setText(acabados["jaladeras"])
+                if "zoclo" in acabados: self.cb_zoclo.setCurrentText(acabados["zoclo"])
+                if "extras" in acabados: self.in_extras.setText(acabados["extras"])
+
+            if equipos:
+                for equipo, info in equipos.items():
+                    if equipo in self.inputs_equipos:
+                        cb_estado, in_detalle = self.inputs_equipos[equipo]
+                        cb_estado.setCurrentText(info.get("estado", "No usa"))
+                        in_detalle.setText(info.get("detalle", ""))
 class DialogoNuevoProspecto(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)

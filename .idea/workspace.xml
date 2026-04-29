@@ -4,9 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="avances citas, fallos visuales 2">
+    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="Se termino la parte de las citas">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sistema.db" beforeDir="false" afterPath="$PROJECT_DIR$/sistema.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sistema.db" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/vistas.py" beforeDir="false" afterPath="$PROJECT_DIR$/vistas.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -65,7 +66,7 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;Citas&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;fase2&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/arman/PycharmProjects/ProyectoResidencia&quot;
   }
 }</component>
@@ -175,8 +176,27 @@
       <option name="project" value="LOCAL" />
       <updated>1776752700266</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Se termino la parte de las citas">
+      <option name="closed" value="true" />
+      <created>1776753582053</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1776753582053</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="login casi terminado" />
@@ -186,6 +206,7 @@
     <MESSAGE value="avances prospectos" />
     <MESSAGE value="avances citas, fallos visuales" />
     <MESSAGE value="avances citas, fallos visuales 2" />
-    <option name="LAST_COMMIT_MESSAGE" value="avances citas, fallos visuales 2" />
+    <MESSAGE value="Se termino la parte de las citas" />
+    <option name="LAST_COMMIT_MESSAGE" value="Se termino la parte de las citas" />
   </component>
 </project>
