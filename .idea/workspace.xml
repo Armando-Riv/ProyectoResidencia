@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="fase 2 mejorada ui pero dejo de funcionar la parte que permite entrar a los detalles">
+    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="cambios a fase 1 en la ui para verse mas limpio">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sistema.db" beforeDir="false" afterPath="$PROJECT_DIR$/sistema.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/vistas.py" beforeDir="false" afterPath="$PROJECT_DIR$/vistas.py" afterDir="false" />
@@ -218,7 +218,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777926212387</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="cambios a fase 1 en la ui para verse mas limpio">
+      <option name="closed" value="true" />
+      <created>1777927226082</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1777927226082</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -245,19 +253,20 @@
     <MESSAGE value="fase 2 hay un error que estoy buscando" />
     <MESSAGE value="fase 2 mejorada faltan cambios" />
     <MESSAGE value="fase 2 mejorada ui pero dejo de funcionar la parte que permite entrar a los detalles" />
-    <option name="LAST_COMMIT_MESSAGE" value="fase 2 mejorada ui pero dejo de funcionar la parte que permite entrar a los detalles" />
+    <MESSAGE value="cambios a fase 1 en la ui para verse mas limpio" />
+    <option name="LAST_COMMIT_MESSAGE" value="cambios a fase 1 en la ui para verse mas limpio" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/vistas.py</url>
-          <line>364</line>
+          <line>399</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/vistas.py</url>
-          <line>524</line>
+          <line>559</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>
       </breakpoints>

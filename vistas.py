@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineE
                                QPushButton, QFrame, QMessageBox, QGraphicsDropShadowEffect,
                                QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget,
                                QDateEdit, QTimeEdit, QScrollArea, QStackedWidget,
-                               QGridLayout, QComboBox, QRadioButton, QButtonGroup, QGroupBox,QSizePolicy,QStackedWidget,QProgressBar, QCheckBox,QInputDialog,QFileDialog)
+                               QGridLayout, QComboBox, QRadioButton, QButtonGroup, QGroupBox,QSizePolicy,QStackedWidget,QProgressBar, QCheckBox,QInputDialog,QFileDialog,QStackedWidget)
 
 from PySide6.QtGui import QPixmap, QIcon, QAction, QColor,QIntValidator,QPdfWriter, QTextDocument, QPageSize,QPageLayout
 from database import GestorBD
@@ -284,51 +284,86 @@ class DetalleProspecto(QWidget):
     def __init__(self, prospecto_id, nombre, telefono):
         super().__init__()
         self.prospecto_id = prospecto_id
+        self.nombre_cliente = nombre
+        self.telefono_cliente = telefono
         self.db = GestorBD()
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setStyleSheet("DetalleProspecto { background-color: #F8F9FB; }")
+        # Fondo general de la pantalla (gris ultra claro para que resalten las tarjetas)
+        self.setStyleSheet("background-color: #F8FAFC;")
 
-        layout_principal = QVBoxLayout(self)
-        layout_principal.setContentsMargins(0, 0, 0, 0)
+        # Layout Principal
+        self.layout_principal = QVBoxLayout(self)
+        self.layout_principal.setContentsMargins(30, 20, 30, 20)
+        self.layout_principal.setSpacing(20)
 
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        # ==========================================
+        # 1. HEADER (Botón Volver + Info del Cliente)
+        # ==========================================
+        self.header_layout = QHBoxLayout()
+        self.header_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
-        contenedor_scroll = QWidget()
-        contenedor_scroll.setStyleSheet("background: transparent;")
-        self.layout = QVBoxLayout(contenedor_scroll)
-        self.layout.setContentsMargins(30, 25, 30, 25)
-        self.layout.setSpacing(15)
-
-        btn_volver = QPushButton("← Volver a la lista")
-        btn_volver.setFixedSize(140, 35)
-        btn_volver.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_volver.setStyleSheet("""
-            QPushButton { background-color: white; color: #EF7C0F; border: 1px solid #EF7C0F; border-radius: 6px; font-weight: bold; font-size: 13px; }
-            QPushButton:hover { background-color: #EF7C0F; color: white; }
+        self.btn_volver = QPushButton("← Volver a la lista")
+        self.btn_volver.setFixedSize(140, 35)
+        self.btn_volver.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_volver.setStyleSheet("""
+            QPushButton { background-color: white; color: #EA580C; border: 1px solid #EA580C; font-weight: bold; border-radius: 6px; }
+            QPushButton:hover { background-color: #FFF7ED; }
         """)
-        btn_volver.clicked.connect(self.cerrado.emit)
-        self.layout.addWidget(btn_volver)
 
-        card_header = QFrame()
-        card_header.setStyleSheet("background-color: white; border-radius: 10px; border: 1px solid #E2E8F0;")
-        layout_header = QVBoxLayout(card_header)
-        lbl_nombre = QLabel(f"{nombre}")
-        lbl_nombre.setStyleSheet("font-size: 22px; font-weight: bold; color: #1E293B; border: none;")
-        lbl_tel = QLabel(f"📞 {telefono}")
-        lbl_tel.setStyleSheet("font-size: 14px; font-weight: bold; color: #64748B; border: none;")
-        layout_header.addWidget(lbl_nombre)
-        layout_header.addWidget(lbl_tel)
-        self.layout.addWidget(card_header)
+        lbl_nombre = QLabel(self.nombre_cliente)
+        lbl_nombre.setStyleSheet("font-size: 22px; font-weight: 900; color: #0F172A; margin-left: 15px;")
 
+        lbl_tel = QLabel(f"📞 {self.telefono_cliente}")
+        lbl_tel.setStyleSheet("font-size: 14px; font-weight: bold; color: #64748B; margin-left: 10px;")
+
+        self.header_layout.addWidget(self.btn_volver)
+        self.header_layout.addWidget(lbl_nombre)
+        self.header_layout.addWidget(lbl_tel)
+        self.header_layout.addStretch()  # Empuja todo a la izquierda
+
+        self.layout_principal.addLayout(self.header_layout)
+
+        # ==========================================
+        # 2. LÍNEA DE TIEMPO (Stepper)
+        # ==========================================
+        self.stepper_layout = QHBoxLayout()
+        self.stepper_layout.setContentsMargins(0, 0, 0, 10)
+
+        # Crearemos una función dedicada para dibujar las 3 bolitas/pasos
+        self._construir_stepper()
+        self.layout_principal.addLayout(self.stepper_layout)
+
+        # ==========================================
+        # 3. EL ESPACIO DE TRABAJO (QStackedWidget)
+        # ==========================================
+        self.stack = QStackedWidget()
+
+        # Creamos los 3 contenedores (cartas de la baraja)
+        self.contenedor_fase1 = QWidget()
+        self.contenedor_fase2 = QWidget()
+        self.contenedor_fase3 = QWidget()
+
+        # Cada contenedor tendrá su propio Layout donde meteremos tus formularios
+        self.layout_fase1 = QVBoxLayout(self.contenedor_fase1)
+        self.layout_fase2 = QVBoxLayout(self.contenedor_fase2)
+        self.layout_fase3 = QVBoxLayout(self.contenedor_fase3)
+
+        # Agregamos las cartas a la baraja
+        self.stack.addWidget(self.contenedor_fase1)
+        self.stack.addWidget(self.contenedor_fase2)
+        self.stack.addWidget(self.contenedor_fase3)
+
+        self.layout_principal.addWidget(self.stack)
+
+        # ==========================================
+        # 4. CONSTRUCCIÓN DE CONTENIDO
+        # ==========================================
         self._construir_fase1()
         self._construir_fase2()
+        self._construir_fase3()
 
-        self.layout.addStretch()
-        scroll.setWidget(contenedor_scroll)
-        layout_principal.addWidget(scroll)
+        # Evaluamos qué carta mostrar por defecto
+        self._determinar_fase_activa()
 
     def _construir_fase1(self):
         # Contenedor principal del título de Fase 1
@@ -424,7 +459,7 @@ class DetalleProspecto(QWidget):
         layout_cita.addLayout(columna_hora)
         layout_cita.addStretch()
         layout_cita.addLayout(columna_boton)
-        self.layout.addWidget(self.frame_cita)
+        self.layout_fase1.addWidget(self.frame_cita)
 
         # LÓGICA DE TRANSICIÓN: Ocultar el cuadro si ya existe una cita
         cita_existente = self.db.obtener_cita(self.prospecto_id)
@@ -764,7 +799,7 @@ class DetalleProspecto(QWidget):
         layout_eq_main.addStretch()
         self.tabs_medicion.addTab(tab_equipos, "🔌 Equipos")
 
-        self.layout.addWidget(self.tabs_medicion)
+        self.layout_fase2.addWidget(self.tabs_medicion)
         self._cargar_datos_medicion()
 
     def _manejar_opcion_otro(self, texto):
@@ -1020,6 +1055,67 @@ class DetalleProspecto(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"No se pudo generar el PDF.\nDetalle: {str(e)}")
 
+
+    def _construir_stepper(self):
+            # Estilos para nuestros botones de la línea de tiempo
+            self.estilo_inactivo = "QPushButton { background-color: #F1F5F9; color: #94A3B8; font-weight: bold; border-radius: 12px; padding: 6px 15px; border: none; }"
+            self.estilo_activo = "QPushButton { background-color: #EA580C; color: white; font-weight: bold; border-radius: 12px; padding: 6px 15px; border: none; }"
+
+            self.btn_paso1 = QPushButton("1. Cita")
+            self.btn_paso2 = QPushButton("2. Levantamiento")
+            self.btn_paso3 = QPushButton("3. Cotización")
+
+            # Conectamos los botones para que al hacer clic cambien la carta visible
+            self.btn_paso1.clicked.connect(lambda: self._cambiar_fase(0))
+            self.btn_paso2.clicked.connect(lambda: self._cambiar_fase(1))
+            self.btn_paso3.clicked.connect(lambda: self._cambiar_fase(2))
+
+            # Centramos el stepper
+            self.stepper_layout.addStretch()
+
+            for btn in [self.btn_paso1, self.btn_paso2, self.btn_paso3]:
+                btn.setCursor(Qt.CursorShape.PointingHandCursor)
+                btn.setStyleSheet(self.estilo_inactivo)
+                self.stepper_layout.addWidget(btn)
+
+                # Agregamos una rayita conectora (excepto después del último paso)
+                if btn != self.btn_paso3:
+                    linea = QLabel(" ── ")
+                    linea.setStyleSheet("color: #CBD5E1; font-weight: bold;")
+                    self.stepper_layout.addWidget(linea)
+
+            self.stepper_layout.addStretch()
+
+    def _cambiar_fase(self, index):
+            # 1. Cambiamos la "carta" visible en nuestro QStackedWidget
+            self.stack.setCurrentIndex(index)
+
+            # 2. Reseteamos todos los botones a gris
+            self.btn_paso1.setStyleSheet(self.estilo_inactivo)
+            self.btn_paso2.setStyleSheet(self.estilo_inactivo)
+            self.btn_paso3.setStyleSheet(self.estilo_inactivo)
+
+            # 3. Pintamos de naranja solo el botón activo
+            if index == 0:
+                self.btn_paso1.setStyleSheet(self.estilo_activo)
+            elif index == 1:
+                self.btn_paso2.setStyleSheet(self.estilo_activo)
+            elif index == 2:
+                self.btn_paso3.setStyleSheet(self.estilo_activo)
+
+    def _determinar_fase_activa(self):
+            # Consultamos la base de datos para ver hasta dónde ha llegado este cliente
+            medicion_info = self.db.obtener_medicion(self.prospecto_id)
+            cotizacion_info = self.db.obtener_cotizacion(self.prospecto_id)
+            cita_info = self.db.obtener_cita(self.prospecto_id)
+
+            # Inteligencia de navegación: lo mandamos a la fase que le toca trabajar
+            if cotizacion_info or medicion_info:
+                self._cambiar_fase(2)  # Si ya tiene medición, lo mandamos a la pestaña de Cotizar
+            elif cita_info:
+                self._cambiar_fase(1)  # Si ya tiene cita, lo mandamos a la pestaña de Medir
+            else:
+                self._cambiar_fase(0)  # Si es nuevo, lo mandamos a la pestaña de Agendar Cita
 
 class TarjetaProspecto(QFrame):
     clicked = Signal(int, str, str)
