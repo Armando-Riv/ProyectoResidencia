@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineE
                                QDateEdit, QTimeEdit, QScrollArea, QStackedWidget,
                                QGridLayout, QComboBox, QRadioButton, QButtonGroup, QGroupBox,QSizePolicy,QStackedWidget,QProgressBar, QCheckBox,QInputDialog,QFileDialog)
 
-from PySide6.QtGui import QPixmap, QIcon, QAction, QColor,QIntValidator,QPdfWriter, QTextDocument, QPageSize
+from PySide6.QtGui import QPixmap, QIcon, QAction, QColor,QIntValidator,QPdfWriter, QTextDocument, QPageSize,QPageLayout
 from database import GestorBD
 from PySide6.QtWidgets import QDialog,QDateEdit, QTimeEdit
 from PySide6.QtCore import Qt, QSize, Signal,QDate, QTime,QMarginsF
@@ -15,7 +15,7 @@ from PySide6.QtCore import Qt, QSize, Signal,QDate, QTime,QMarginsF
 
 # --- CLASE PADRE (HERENCIA) ---
 class VentanaBase(QWidget):
-    """Clase base que contiene el comportamiento común de las ventanas."""
+
 
     def __init__(self, titulo, ancho, alto):
         super().__init__()
@@ -24,14 +24,14 @@ class VentanaBase(QWidget):
         self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
 
     def centrar_ventana(self):
-        """Centra la ventana en el monitor actual."""
+
         geometria = self.frameGeometry()
         centro = self.screen().availableGeometry().center()
         geometria.moveCenter(centro)
         self.move(geometria.topLeft())
 
     def cerrar_sesion(self):
-        """Cierra la ventana actual y regresa al Login."""
+
         self.ventana_login = VentanaLogin()
         self.ventana_login.show()
         self.close()
@@ -278,76 +278,6 @@ class VentanaLogin(VentanaBase):
             self.input_contrasena.clear()
 
 
-
-
-# -------------------------------------------------------
-# WIDGET: Tarjeta individual de un prospecto/cliente
-# -------------------------------------------------------
-
-class TarjetaProspecto(QFrame):
-    clicked = Signal(int)
-
-    def __init__(self, prospecto_id, nombre, telefono, cita_info):
-        super().__init__()
-        self.prospecto_id = prospecto_id
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFixedHeight(105)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._aplicar_estilo(False)
-
-        self.sombra = QGraphicsDropShadowEffect(self)
-        self.sombra.setBlurRadius(15)
-        self.sombra.setYOffset(4)
-        self.sombra.setColor(QColor(0, 0, 0, 20))
-        self.setGraphicsEffect(self.sombra)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 15, 20, 15)
-
-        fila_top = QHBoxLayout()
-        lbl_nombre = QLabel(f"<b>{nombre}</b>")
-        lbl_nombre.setStyleSheet("font-size: 15px; color: #1E293B; background: transparent;")
-        lbl_tel = QLabel(f"📞 {telefono}")
-        lbl_tel.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; background: transparent;")
-
-        fila_top.addWidget(lbl_nombre)
-        fila_top.addStretch()
-        fila_top.addWidget(lbl_tel)
-        layout.addLayout(fila_top)
-
-        # Estado visual basado en la Cita
-        if cita_info:
-            fecha, hora = cita_info
-            lbl_estado = QLabel(f"📅 Cita programada: {fecha} a las {hora}")
-            lbl_estado.setStyleSheet("font-size: 13px; font-weight: bold; color: #EF7C0F; background: transparent;")
-        else:
-            lbl_estado = QLabel("⏳ Nuevo - Pendiente de agendar cita")
-            lbl_estado.setStyleSheet("font-size: 13px; font-weight: 500; color: #94A3B8; background: transparent;")
-
-        layout.addWidget(lbl_estado)
-
-    def _aplicar_estilo(self, hover):
-        fondo = "#F8FAFC" if hover else "#FFFFFF"
-        borde = "1px solid #CBD5E1" if hover else "1px solid transparent"
-        self.setStyleSheet(f"TarjetaProspecto {{ background-color: {fondo}; border: {borde}; border-radius: 12px; }}")
-
-    def enterEvent(self, event):
-        self._aplicar_estilo(True)
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self._aplicar_estilo(False)
-        super().leaveEvent(event)
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit(self.prospecto_id)
-        super().mousePressEvent(event)
-
-# -------------------------------------------------------
-# WIDGET: Detalle de un prospecto con checklist visual
-# -------------------------------------------------------
 class DetalleProspecto(QWidget):
     cerrado = Signal()
 
@@ -359,7 +289,6 @@ class DetalleProspecto(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet("DetalleProspecto { background-color: #F8F9FB; }")
 
-        # Usamos un ScrollArea principal por si la pantalla del vendedor es pequeña
         layout_principal = QVBoxLayout(self)
         layout_principal.setContentsMargins(0, 0, 0, 0)
 
@@ -373,7 +302,6 @@ class DetalleProspecto(QWidget):
         self.layout.setContentsMargins(30, 25, 30, 25)
         self.layout.setSpacing(15)
 
-        # --- BOTÓN VOLVER Y HEADER ---
         btn_volver = QPushButton("← Volver a la lista")
         btn_volver.setFixedSize(140, 35)
         btn_volver.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -395,14 +323,7 @@ class DetalleProspecto(QWidget):
         layout_header.addWidget(lbl_tel)
         self.layout.addWidget(card_header)
 
-        # ==========================================
-        # FASE 1: AGENDAR CITA (Se mantiene intacta)
-        # ==========================================
         self._construir_fase1()
-
-        # ==========================================
-        # FASE 2: LEVANTAMIENTO Y MEDICIÓN
-        # ==========================================
         self._construir_fase2()
 
         self.layout.addStretch()
@@ -492,62 +413,49 @@ class DetalleProspecto(QWidget):
         self.cerrado.emit()
 
     def _construir_fase2(self):
-        def _construir_fase2(self):
-            # --- HEADER CON BOTÓN GUARDAR Y PDF ARRIBA ---
-            header_fase2 = QHBoxLayout()
-            header_fase2.setContentsMargins(0, 20, 0, 10)
+        header_fase2 = QHBoxLayout()
+        header_fase2.setContentsMargins(0, 20, 0, 10)
 
-            lbl_fase2 = QLabel("Fase 2: Levantamiento y Medición")
-            lbl_fase2.setStyleSheet("font-size: 18px; font-weight: bold; color: #1E293B;")
+        lbl_fase2 = QLabel("Fase 2: Contacto con el cliente")
+        lbl_fase2.setStyleSheet("font-size: 18px; font-weight: bold; color: #1E293B;")
 
-            btn_generar_pdf = QPushButton("📄 Generar PDF")
-            btn_generar_pdf.setFixedSize(140, 36)
-            btn_generar_pdf.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_generar_pdf.setStyleSheet(
-                "QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; } QPushButton:hover { background-color: #C06513; }")
-            btn_generar_pdf.clicked.connect(self._generar_pdf_medicion)
+        btn_generar_pdf = QPushButton("📄 Generar PDF")
+        btn_generar_pdf.setFixedSize(140, 36)
+        btn_generar_pdf.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_generar_pdf.setStyleSheet(
+            "QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; } QPushButton:hover { background-color: #C06513; }")
+        btn_generar_pdf.clicked.connect(self._generar_pdf_medicion)
 
-            btn_guardar_fase2 = QPushButton("💾 Guardar Formulario")
-            btn_guardar_fase2.setFixedSize(180, 36)
-            btn_guardar_fase2.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_guardar_fase2.setStyleSheet(
-                "QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; } QPushButton:hover { background-color: #219653; }")
-            btn_guardar_fase2.clicked.connect(self._guardar_medicion)
+        btn_guardar_fase2 = QPushButton("💾 Guardar Formulario")
+        btn_guardar_fase2.setFixedSize(180, 36)
+        btn_guardar_fase2.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_guardar_fase2.setStyleSheet(
+            "QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; } QPushButton:hover { background-color: #219653; }")
+        btn_guardar_fase2.clicked.connect(self._guardar_medicion)
 
-            header_fase2.addWidget(lbl_fase2)
-            header_fase2.addStretch()
-            header_fase2.addWidget(btn_generar_pdf)
-            header_fase2.addWidget(btn_guardar_fase2)
+        header_fase2.addWidget(lbl_fase2)
+        header_fase2.addStretch()
+        header_fase2.addWidget(btn_generar_pdf)
+        header_fase2.addWidget(btn_guardar_fase2)
 
-            self.layout.addLayout(header_fase2)
+        self.layout.addLayout(header_fase2)
 
-            # =========================================================
-            # ¡ESTA ES LA LÍNEA QUE TE FALTA O QUE ESTÁ MAL ESCRITA!
-            # =========================================================
-            self.tabs_medicion = QTabWidget()
+        self.tabs_medicion = QTabWidget()
+        self.tabs_medicion.setStyleSheet("""
+            QTabWidget::pane { border: 1px solid #E2E8F0; background: white; border-radius: 8px; }
+            QTabBar::tab { background: #F1F5F9; color: #64748B; padding: 10px 15px; font-weight: bold; border-top-left-radius: 6px; border-top-right-radius: 6px; margin-right: 2px; }
+            QTabBar::tab:selected { background: white; color: #EF7C0F; border-bottom: 2px solid white; }
+        """)
 
-            self.tabs_medicion.setStyleSheet("""
-                QTabWidget::pane { border: 1px solid #E2E8F0; background: white; border-radius: 8px; }
-                QTabBar::tab { background: #F1F5F9; color: #64748B; padding: 10px 15px; font-weight: bold; border-top-left-radius: 6px; border-top-right-radius: 6px; margin-right: 2px; }
-                QTabBar::tab:selected { background: white; color: #EF7C0F; border-bottom: 2px solid white; }
-            """)
-
-        # --- ESTILOS MEJORADOS (Jerarquía y Tarjetas) ---
         estilo_label = "font-size: 11px; font-weight: 800; color: #94A3B8; text-transform: uppercase;"
         estilo_input = """
-            QLineEdit, QComboBox, QDateEdit { 
-                background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 5px; 
-                padding: 6px; color: #1E293B; font-size: 14px; font-weight: 500;
-            }
+            QLineEdit, QComboBox, QDateEdit { background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 5px; padding: 6px; color: #1E293B; font-size: 14px; font-weight: 500; }
             QLineEdit:focus, QComboBox:focus, QDateEdit:focus { border: 1px solid #EF7C0F; background-color: #FFFFFF; }
             QDateEdit::drop-down { border: none; width: 20px; }
             QComboBox QAbstractItemView { background-color: #FFFFFF; color: #1E293B; selection-background-color: #27AE60; selection-color: white; outline: none; }
         """
         estilo_grupo = """
-            QGroupBox {
-                background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px;
-                margin-top: 15px; font-size: 14px; font-weight: bold; color: #1E293B;
-            }
+            QGroupBox { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; margin-top: 15px; font-size: 14px; font-weight: bold; color: #1E293B; }
             QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 15px; padding: 0 5px; }
         """
 
@@ -556,15 +464,12 @@ class DetalleProspecto(QWidget):
             lbl.setStyleSheet(estilo_label)
             return lbl
 
-        # ==========================================
-        # PESTAÑA 1: DATOS GENERALES (Con GroupBoxes)
-        # ==========================================
+        # --- Pestaña 1: Datos Generales ---
         tab_generales = QWidget()
         layout_gen_main = QVBoxLayout(tab_generales)
         layout_gen_main.setContentsMargins(20, 20, 20, 20)
         layout_gen_main.setSpacing(20)
 
-        # --- Tarjeta 1: Detalles de Visita ---
         gb_visita = QGroupBox("Detalles de la Visita")
         gb_visita.setStyleSheet(estilo_grupo)
         layout_visita = QGridLayout(gb_visita)
@@ -589,7 +494,6 @@ class DetalleProspecto(QWidget):
         self.in_importe_3d.setValidator(validador_dinero);
         self.in_importe_3d.setStyleSheet(estilo_input)
 
-        # Usamos 1, 0 en lugar de 0, 1 para que el Label quede arriba del Input
         layout_visita.addWidget(crear_label("Fecha Visita"), 0, 0)
         layout_visita.addWidget(self.in_fecha_visita, 1, 0)
         layout_visita.addWidget(crear_label("¿Pagó Visita?"), 0, 1)
@@ -599,7 +503,6 @@ class DetalleProspecto(QWidget):
         layout_visita.addWidget(crear_label("Importe 3D"), 0, 3)
         layout_visita.addWidget(self.in_importe_3d, 1, 3)
 
-        # --- Tarjeta 2: Ubicación e Inmueble ---
         gb_inmueble = QGroupBox("Ubicación e Inmueble")
         gb_inmueble.setStyleSheet(estilo_grupo)
         layout_inmueble = QGridLayout(gb_inmueble)
@@ -627,9 +530,8 @@ class DetalleProspecto(QWidget):
         layout_inmueble.addWidget(self.in_prototipo, 1, 1)
         layout_inmueble.addWidget(crear_label("¿Vive ahí?"), 0, 2)
         layout_inmueble.addWidget(self.cb_vive_ahi, 1, 2)
-
         layout_inmueble.addWidget(crear_label("Dirección Exacta"), 2, 0)
-        layout_inmueble.addWidget(self.in_direccion, 3, 0, 1, 2)  # Ocupa 2 columnas
+        layout_inmueble.addWidget(self.in_direccion, 3, 0, 1, 2)
         layout_inmueble.addWidget(crear_label("¿Cómo se enteró?"), 2, 2)
         layout_inmueble.addWidget(self.cb_entero, 3, 2)
 
@@ -638,9 +540,7 @@ class DetalleProspecto(QWidget):
         layout_gen_main.addStretch()
         self.tabs_medicion.addTab(tab_generales, "📝 Generales")
 
-        # ==========================================
-        # PESTAÑA 2: DISEÑO Y PRESUPUESTO
-        # ==========================================
+        # --- Pestaña 2: Diseño y Presupuesto ---
         tab_diseno = QWidget()
         layout_diseno = QGridLayout(tab_diseno)
         layout_diseno.setContentsMargins(20, 20, 20, 20)
@@ -676,12 +576,10 @@ class DetalleProspecto(QWidget):
         layout_diseno.addWidget(self.cb_equipos_inc, 1, 1)
         layout_diseno.addWidget(crear_label("Facilidades de pago"), 0, 2)
         layout_diseno.addWidget(self.cb_facilidades, 1, 2)
-
         layout_diseno.addWidget(crear_label("¿Ya tiene cocina?"), 2, 0)
         layout_diseno.addWidget(self.cb_ya_tiene, 3, 0)
         layout_diseno.addWidget(crear_label("Distribución deseada"), 2, 1)
         layout_diseno.addWidget(self.cb_distribucion, 3, 1)
-
         layout_diseno.addWidget(crear_label("Altura deseada"), 4, 0)
         layout_diseno.addWidget(self.cb_altura, 5, 0)
         layout_diseno.addWidget(crear_label("¿Desea plafón con luz?"), 4, 1)
@@ -690,9 +588,7 @@ class DetalleProspecto(QWidget):
         layout_diseno.setRowStretch(6, 1)
         self.tabs_medicion.addTab(tab_diseno, "📐 Diseño y Presupuesto")
 
-        # ==========================================
-        # PESTAÑA 3: ACABADOS
-        # ==========================================
+        # --- Pestaña 3: Acabados ---
         tab_acabados = QWidget()
         layout_aca = QGridLayout(tab_acabados)
         layout_aca.setContentsMargins(20, 20, 20, 20)
@@ -718,26 +614,21 @@ class DetalleProspecto(QWidget):
         layout_aca.addWidget(self.in_puertas1, 1, 0)
         layout_aca.addWidget(crear_label("Opción 2 Puertas"), 0, 1)
         layout_aca.addWidget(self.in_puertas2, 1, 1)
-
         layout_aca.addWidget(crear_label("Cubierta A"), 2, 0)
         layout_aca.addWidget(self.in_cubierta_a, 3, 0)
         layout_aca.addWidget(crear_label("Cubierta B"), 2, 1)
         layout_aca.addWidget(self.in_cubierta_b, 3, 1)
-
         layout_aca.addWidget(crear_label("Jaladeras"), 4, 0)
         layout_aca.addWidget(self.in_jaladeras, 5, 0)
         layout_aca.addWidget(crear_label("Zoclo / Base"), 4, 1)
         layout_aca.addWidget(self.cb_zoclo, 5, 1)
-
         layout_aca.addWidget(crear_label("Extras"), 6, 0)
         layout_aca.addWidget(self.in_extras, 7, 0, 1, 2)
 
         layout_aca.setRowStretch(8, 1)
         self.tabs_medicion.addTab(tab_acabados, "🎨 Acabados")
 
-        # ==========================================
-        # PESTAÑA 4: EQUIPAMIENTO (Con Efecto Cebra)
-        # ==========================================
+        # --- Pestaña 4: Equipamiento ---
         tab_equipos = QWidget()
         layout_eq_main = QVBoxLayout(tab_equipos)
         layout_eq_main.setContentsMargins(20, 20, 20, 20)
@@ -752,7 +643,6 @@ class DetalleProspecto(QWidget):
         ]
         self.inputs_equipos = {}
 
-        # Header de la tabla
         header_eq = QHBoxLayout()
         header_eq.setContentsMargins(10, 0, 10, 5)
         lbl_h1 = crear_label("EQUIPO");
@@ -765,7 +655,6 @@ class DetalleProspecto(QWidget):
         header_eq.addWidget(lbl_h3)
         layout_eq_main.addLayout(header_eq)
 
-        # Generación dinámica con efecto cebra
         for i, (equipo, placeholder) in enumerate(equipos_lista):
             fila = QFrame()
             color_fondo = "#F8FAFC" if i % 2 == 0 else "#FFFFFF"
@@ -801,13 +690,14 @@ class DetalleProspecto(QWidget):
 
     def _manejar_opcion_otro(self, texto):
         if texto == "Otro":
+            from PySide6.QtWidgets import QInputDialog
             nuevo_valor, ok = QInputDialog.getText(self, "Especificar", "¿Cómo se enteró de nosotros?")
             if ok and nuevo_valor.strip():
                 combo = self.sender()
                 combo.insertItem(combo.count() - 1, nuevo_valor.strip())
                 combo.setCurrentText(nuevo_valor.strip())
             else:
-                self.sender().setCurrentIndex(0)  # Si cancela, lo regresamos a la primera opción
+                self.sender().setCurrentIndex(0)
 
     def _guardar_medicion(self):
         datos_generales = (
@@ -820,7 +710,7 @@ class DetalleProspecto(QWidget):
             self.cb_vive_ahi.currentText(),
             self.in_direccion.text(),
             self.cb_entero.currentText(),
-            ""  # Mantenemos el espacio vacío en BD por la eliminación de "cuando compra"
+            ""
         )
 
         presupuesto = {
@@ -873,7 +763,6 @@ class DetalleProspecto(QWidget):
             if direc: self.in_direccion.setText(direc)
 
             if entero:
-                # Si el valor guardado no está en la lista estándar, lo agregamos temporalmente
                 if self.cb_entero.findText(entero) == -1:
                     self.cb_entero.insertItem(self.cb_entero.count() - 1, entero)
                 self.cb_entero.setCurrentText(entero)
@@ -907,28 +796,23 @@ class DetalleProspecto(QWidget):
                         in_detalle.setText(info.get("detalle", ""))
 
     def _generar_pdf_medicion(self):
-        # 1. Obtener los datos más recientes de la BD
         datos = self.db.obtener_medicion(self.prospecto_id)
         if not datos:
             QMessageBox.warning(self, "Sin datos",
                                 "Debe guardar el formulario al menos una vez antes de generar el PDF.")
             return
 
-        # Desempaquetamos los datos
         (fv, pv, iv, i3d, frac, proto, vive, direc, entero, compra,
          presupuesto, distribucion, acabados, equipos) = datos
 
-        # 2. Preguntar al usuario dónde guardar el archivo
         ruta_archivo, _ = QFileDialog.getSaveFileName(
             self, "Guardar PDF de Medición",
             f"Levantamiento_Prospecto_{self.prospecto_id}.pdf",
             "Archivos PDF (*.pdf)"
         )
         if not ruta_archivo:
-            return  # El usuario canceló
+            return
 
-        # 3. Construir el diseño del PDF usando HTML y Tablas
-        # Extraemos valores de los diccionarios con un valor por defecto ("") por si están vacíos
         p_nivel = presupuesto.get("nivel", "") if presupuesto else ""
         p_equipos = presupuesto.get("equipos_incluidos", "") if presupuesto else ""
         p_facil = presupuesto.get("facilidades", "") if presupuesto else ""
@@ -939,112 +823,116 @@ class DetalleProspecto(QWidget):
         d_plafon = distribucion.get("plafon", "") if distribucion else ""
 
         html = f"""
-         <html>
-         <head>
-             <style>
-                 body {{ font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #333; }}
-                 h1 {{ color: #1E293B; text-align: center; margin-bottom: 5px; }}
-                 h2 {{ color: #EF7C0F; text-align: center; margin-top: 0px; font-size: 16px; margin-bottom: 20px; }}
-                 table {{ width: 100%; border-collapse: collapse; margin-bottom: 15px; }}
-                 th, td {{ border: 1px solid #CBD5E1; padding: 6px; text-align: left; }}
-                 th {{ background-color: #2C3E50; color: white; font-size: 12px; }}
-                 .bg-light {{ background-color: #F8FAFC; font-weight: bold; width: 25%; color: #475569; }}
-                 .title-row {{ background-color: #EF7C0F; color: white; font-weight: bold; text-align: center; }}
-             </style>
-         </head>
-         <body>
-             <h1>Excellence Cocinas</h1>
-             <h2>Formato de Levantamiento y Medición</h2>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #333; }}
+                h1 {{ color: #1E293B; text-align: center; margin-bottom: 5px; }}
+                h2 {{ color: #EF7C0F; text-align: center; margin-top: 0px; font-size: 16px; margin-bottom: 20px; }}
+                table {{ width: 100%; border-collapse: collapse; margin-bottom: 15px; }}
+                th, td {{ border: 1px solid #CBD5E1; padding: 6px; text-align: left; }}
+                th {{ background-color: #2C3E50; color: white; font-size: 12px; }}
+                .bg-light {{ background-color: #F8FAFC; font-weight: bold; width: 25%; color: #475569; }}
+                .title-row {{ background-color: #EF7C0F; color: white; font-weight: bold; text-align: center; }}
+            </style>
+        </head>
+        <body>
+            <h1>Excellence Cocinas</h1>
+            <h2>Formato de Levantamiento y Medición</h2>
 
-             <table>
-                 <tr><th colspan="4">DATOS GENERALES</th></tr>
-                 <tr>
-                     <td class="bg-light">Fecha Visita:</td> <td>{fv}</td>
-                     <td class="bg-light">¿Pagó Visita?:</td> <td>{pv}</td>
-                 </tr>
-                 <tr>
-                     <td class="bg-light">Importe Visita:</td> <td>{iv}</td>
-                     <td class="bg-light">Importe 3D:</td> <td>{i3d}</td>
-                 </tr>
-                 <tr>
-                     <td class="bg-light">Fraccionamiento:</td> <td>{frac}</td>
-                     <td class="bg-light">Prototipo:</td> <td>{proto}</td>
-                 </tr>
-                 <tr>
-                     <td class="bg-light">Dirección:</td> <td colspan="3">{direc}</td>
-                 </tr>
-                 <tr>
-                     <td class="bg-light">¿Vive ahí?:</td> <td>{vive}</td>
-                     <td class="bg-light">¿Cómo se enteró?:</td> <td>{entero}</td>
-                 </tr>
-             </table>
+            <table>
+                <tr><th colspan="4">DATOS GENERALES</th></tr>
+                <tr>
+                    <td class="bg-light">Fecha Visita:</td> <td>{fv}</td>
+                    <td class="bg-light">¿Pagó Visita?:</td> <td>{pv}</td>
+                </tr>
+                <tr>
+                    <td class="bg-light">Importe Visita:</td> <td>{iv}</td>
+                    <td class="bg-light">Importe 3D:</td> <td>{i3d}</td>
+                </tr>
+                <tr>
+                    <td class="bg-light">Fraccionamiento:</td> <td>{frac}</td>
+                    <td class="bg-light">Prototipo:</td> <td>{proto}</td>
+                </tr>
+                <tr>
+                    <td class="bg-light">Dirección:</td> <td colspan="3">{direc}</td>
+                </tr>
+                <tr>
+                    <td class="bg-light">¿Vive ahí?:</td> <td>{vive}</td>
+                    <td class="bg-light">¿Cómo se enteró?:</td> <td>{entero}</td>
+                </tr>
+            </table>
 
-             <table>
-                 <tr><th colspan="4">DISEÑO Y PRESUPUESTO</th></tr>
-                 <tr>
-                     <td class="bg-light">Rango Presupuesto:</td> <td>{p_nivel}</td>
-                     <td class="bg-light">¿Contempla Equipos?:</td> <td>{p_equipos}</td>
-                 </tr>
-                 <tr>
-                     <td class="bg-light">Facilidades Pago:</td> <td>{p_facil}</td>
-                     <td class="bg-light">¿Ya tiene cocina?:</td> <td>{d_yatiene}</td>
-                 </tr>
-                 <tr>
-                     <td class="bg-light">Distribución deseada:</td> <td>{d_tipo}</td>
-                     <td class="bg-light">Altura deseada:</td> <td>{d_altura}</td>
-                 </tr>
-                 <tr>
-                     <td class="bg-light">¿Desea Plafón?:</td> <td colspan="3">{d_plafon}</td>
-                 </tr>
-             </table>
+            <table>
+                <tr><th colspan="4">DISEÑO Y PRESUPUESTO</th></tr>
+                <tr>
+                    <td class="bg-light">Rango Presupuesto:</td> <td>{p_nivel}</td>
+                    <td class="bg-light">¿Contempla Equipos?:</td> <td>{p_equipos}</td>
+                </tr>
+                <tr>
+                    <td class="bg-light">Facilidades Pago:</td> <td>{p_facil}</td>
+                    <td class="bg-light">¿Ya tiene cocina?:</td> <td>{d_yatiene}</td>
+                </tr>
+                <tr>
+                    <td class="bg-light">Distribución deseada:</td> <td>{d_tipo}</td>
+                    <td class="bg-light">Altura deseada:</td> <td>{d_altura}</td>
+                </tr>
+                <tr>
+                    <td class="bg-light">¿Desea Plafón?:</td> <td colspan="3">{d_plafon}</td>
+                </tr>
+            </table>
 
-             <table>
-                 <tr><th colspan="2">ACABADOS</th></tr>
-                 <tr><td class="bg-light" style="width:30%;">Opción 1 Puertas:</td> <td>{acabados.get('puertas_1', '') if acabados else ''}</td></tr>
-                 <tr><td class="bg-light">Opción 2 Puertas:</td> <td>{acabados.get('puertas_2', '') if acabados else ''}</td></tr>
-                 <tr><td class="bg-light">Cubierta A:</td> <td>{acabados.get('cubierta_a', '') if acabados else ''}</td></tr>
-                 <tr><td class="bg-light">Cubierta B:</td> <td>{acabados.get('cubierta_b', '') if acabados else ''}</td></tr>
-                 <tr><td class="bg-light">Jaladeras:</td> <td>{acabados.get('jaladeras', '') if acabados else ''}</td></tr>
-                 <tr><td class="bg-light">Zoclo / Base:</td> <td>{acabados.get('zoclo', '') if acabados else ''}</td></tr>
-                 <tr><td class="bg-light">Extras:</td> <td>{acabados.get('extras', '') if acabados else ''}</td></tr>
-             </table>
+            <table>
+                <tr><th colspan="2">ACABADOS</th></tr>
+                <tr><td class="bg-light" style="width:30%;">Opción 1 Puertas:</td> <td>{acabados.get('puertas_1', '') if acabados else ''}</td></tr>
+                <tr><td class="bg-light">Opción 2 Puertas:</td> <td>{acabados.get('puertas_2', '') if acabados else ''}</td></tr>
+                <tr><td class="bg-light">Cubierta A:</td> <td>{acabados.get('cubierta_a', '') if acabados else ''}</td></tr>
+                <tr><td class="bg-light">Cubierta B:</td> <td>{acabados.get('cubierta_b', '') if acabados else ''}</td></tr>
+                <tr><td class="bg-light">Jaladeras:</td> <td>{acabados.get('jaladeras', '') if acabados else ''}</td></tr>
+                <tr><td class="bg-light">Zoclo / Base:</td> <td>{acabados.get('zoclo', '') if acabados else ''}</td></tr>
+                <tr><td class="bg-light">Extras:</td> <td>{acabados.get('extras', '') if acabados else ''}</td></tr>
+            </table>
 
-             <table>
-                 <tr><th colspan="3">EQUIPAMIENTO</th></tr>
-                 <tr>
-                     <td class="title-row" style="width:30%;">Equipo</td>
-                     <td class="title-row" style="width:20%;">Estado</td>
-                     <td class="title-row" style="width:50%;">Especificaciones</td>
-                 </tr>
-         """
+            <table>
+                <tr><th colspan="3">EQUIPAMIENTO</th></tr>
+                <tr>
+                    <td class="title-row" style="width:30%;">Equipo</td>
+                    <td class="title-row" style="width:20%;">Estado</td>
+                    <td class="title-row" style="width:50%;">Especificaciones</td>
+                </tr>
+        """
 
-        # Generar filas de equipos dinámicamente
         if equipos:
             for equipo, info in equipos.items():
                 estado = info.get('estado', '')
                 detalle = info.get('detalle', '')
                 html += f"""
-                 <tr>
-                     <td class="bg-light">{equipo}</td>
-                     <td>{estado}</td>
-                     <td>{detalle}</td>
-                 </tr>
-                 """
+                <tr>
+                    <td class="bg-light">{equipo}</td>
+                    <td>{estado}</td>
+                    <td>{detalle}</td>
+                </tr>
+                """
 
         html += """
-             </table>
-         </body>
-         </html>
-         """
+            </table>
+        </body>
+        </html>
+        """
 
-        # 4. Renderizar y Guardar PDF
         try:
             documento = QTextDocument()
             documento.setHtml(html)
 
             writer = QPdfWriter(ruta_archivo)
             writer.setPageSize(QPageSize(QPageSize.PageSizeId.Letter))
-            writer.setPageMargins(QMarginsF(15, 15, 15, 15), QPdfWriter.Unit.Millimeter)
+            writer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout.Unit.Millimeter)
+
+            # --- LA SOLUCIÓN ESTÁ EN ESTAS DOS LÍNEAS ---
+            # 1. Bajamos la resolución a formato de pantalla para que los pixeles coincidan
+            writer.setResolution(96)
+            # 2. Le decimos al documento el tamaño exacto del área de dibujo para que el 'width: 100%' funcione
+            documento.setPageSize(writer.pageLayout().paintRectPixels(writer.resolution()).size())
 
             documento.print_(writer)
             QMessageBox.information(self, "PDF Generado",
@@ -1052,6 +940,72 @@ class DetalleProspecto(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"No se pudo generar el PDF.\nDetalle: {str(e)}")
+
+class TarjetaProspecto(QFrame):
+    clicked = Signal(int)
+
+    def __init__(self, prospecto_id, nombre, telefono, cita_info):
+        super().__init__()
+        self.prospecto_id = prospecto_id
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFixedHeight(105)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._aplicar_estilo(False)
+
+        self.sombra = QGraphicsDropShadowEffect(self)
+        self.sombra.setBlurRadius(15)
+        self.sombra.setYOffset(4)
+        self.sombra.setColor(QColor(0, 0, 0, 20))
+        self.setGraphicsEffect(self.sombra)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 15, 20, 15)
+
+        fila_top = QHBoxLayout()
+        lbl_nombre = QLabel(f"<b>{nombre}</b>")
+        lbl_nombre.setStyleSheet("font-size: 15px; color: #1E293B; background: transparent;")
+        lbl_tel = QLabel(f"📞 {telefono}")
+        lbl_tel.setStyleSheet("font-size: 13px; font-weight: bold; color: #64748B; background: transparent;")
+
+        fila_top.addWidget(lbl_nombre)
+        fila_top.addStretch()
+        fila_top.addWidget(lbl_tel)
+        layout.addLayout(fila_top)
+
+        # Estado visual basado en la Cita
+        if cita_info:
+            fecha, hora = cita_info
+            lbl_estado = QLabel(f"📅 Cita programada: {fecha} a las {hora}")
+            lbl_estado.setStyleSheet("font-size: 13px; font-weight: bold; color: #EF7C0F; background: transparent;")
+        else:
+            lbl_estado = QLabel("⏳ Nuevo - Pendiente de agendar cita")
+            lbl_estado.setStyleSheet("font-size: 13px; font-weight: 500; color: #94A3B8; background: transparent;")
+
+        layout.addWidget(lbl_estado)
+
+    def _aplicar_estilo(self, hover):
+        fondo = "#F8FAFC" if hover else "#FFFFFF"
+        borde = "1px solid #CBD5E1" if hover else "1px solid transparent"
+        self.setStyleSheet(f"TarjetaProspecto {{ background-color: {fondo}; border: {borde}; border-radius: 12px; }}")
+
+    def enterEvent(self, event):
+        self._aplicar_estilo(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._aplicar_estilo(False)
+        super().leaveEvent(event)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit(self.prospecto_id)
+        super().mousePressEvent(event)
+
+
+
+
+
 class DialogoNuevoProspecto(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1290,6 +1244,5 @@ class PanelProspectos(QWidget):
         dialogo = DialogoNuevoProspecto(self)
         if dialogo.exec():
             nombre, telefono = dialogo.obtener_datos()
-            # Ya no llamamos al checklist, solo agregamos a la BD y recargamos
             self.db.agregar_prospecto(nombre, telefono, self.usuario_id)
             self.cargar_datos()

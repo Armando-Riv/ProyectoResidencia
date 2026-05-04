@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="inicio fase 2 falta pdf, y mejorar ui">
+    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="fase 2 hay un error que estoy buscando">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sistema.db" beforeDir="false" afterPath="$PROJECT_DIR$/sistema.db" afterDir="false" />
@@ -195,7 +195,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777485514942</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="fase 2 hay un error que estoy buscando">
+      <option name="closed" value="true" />
+      <created>1777879474041</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1777879474041</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -219,6 +227,7 @@
     <MESSAGE value="avances citas, fallos visuales 2" />
     <MESSAGE value="Se termino la parte de las citas" />
     <MESSAGE value="inicio fase 2 falta pdf, y mejorar ui" />
-    <option name="LAST_COMMIT_MESSAGE" value="inicio fase 2 falta pdf, y mejorar ui" />
+    <MESSAGE value="fase 2 hay un error que estoy buscando" />
+    <option name="LAST_COMMIT_MESSAGE" value="fase 2 hay un error que estoy buscando" />
   </component>
 </project>

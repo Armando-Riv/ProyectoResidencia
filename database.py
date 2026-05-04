@@ -75,7 +75,8 @@ class GestorBD:
 
             usuarios_prueba = [
                 ('admin', 'admin123', 'admin'),
-                ('vendedor1', 'ventas123', 'vendedor')
+                ('vendedor1', 'ventas123', 'vendedor'),
+                ('vendedor2', 'ventas123', 'vendedor')
             ]
             cursor.executemany('''
                 INSERT OR IGNORE INTO usuarios (usuario, contrasena, rol) 
@@ -129,12 +130,9 @@ class GestorBD:
             cursor.execute('SELECT fecha, hora FROM citas WHERE prospecto_id = ?', (prospecto_id,))
             return cursor.fetchone()
 
-    # --- NUEVOS MÉTODOS: MEDICIÓN (FASE 2) ---
+    # -(FASE 2) ---
     def guardar_medicion(self, prospecto_id, datos_generales, presupuesto, distribucion, acabados, equipos):
-        """
-        Guarda o actualiza el cuestionario de medición.
-        Los parámetros presupuesto, distribucion, acabados y equipos son diccionarios (dict) de Python.
-        """
+
         with sqlite3.connect(self.db_name) as conexion:
             cursor = conexion.cursor()
 
