@@ -45,8 +45,7 @@ class GestorBD:
                 )
             ''')
 
-            # NUEVA TABLA: Formulario de Medición (Fase 2)
-            # Agrupamos los datos principales en columnas y los detalles técnicos en JSON
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS formulario_medicion (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,7 +83,7 @@ class GestorBD:
             ''', usuarios_prueba)
             conexion.commit()
 
-    # --- MÉTODOS DE PROSPECTOS ---
+
     def agregar_prospecto(self, nombre, telefono, vendedor_id):
         with sqlite3.connect(self.db_name) as conexion:
             cursor = conexion.cursor()
@@ -109,7 +108,7 @@ class GestorBD:
                                (usuario_id,))
             return cursor.fetchall()
 
-    # --- MÉTODOS DE CITAS (FASE 1) ---
+
     def agendar_cita(self, prospecto_id, fecha, hora):
         with sqlite3.connect(self.db_name) as conexion:
             cursor = conexion.cursor()
