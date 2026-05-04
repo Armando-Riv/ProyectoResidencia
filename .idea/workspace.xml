@@ -4,7 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="fase 2 hay un error que estoy buscando">
+    <list default="true" id="c05b010c-b272-4c1c-a1ac-738143107cbc" name="Changes" comment="fase 2 mejorada faltan cambios">
+      <change afterPath="$PROJECT_DIR$/calendar.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sistema.db" beforeDir="false" afterPath="$PROJECT_DIR$/sistema.db" afterDir="false" />
@@ -203,7 +204,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777879474041</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="fase 2 mejorada faltan cambios">
+      <option name="closed" value="true" />
+      <created>1777883723362</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1777883723362</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -228,6 +237,23 @@
     <MESSAGE value="Se termino la parte de las citas" />
     <MESSAGE value="inicio fase 2 falta pdf, y mejorar ui" />
     <MESSAGE value="fase 2 hay un error que estoy buscando" />
-    <option name="LAST_COMMIT_MESSAGE" value="fase 2 hay un error que estoy buscando" />
+    <MESSAGE value="fase 2 mejorada faltan cambios" />
+    <option name="LAST_COMMIT_MESSAGE" value="fase 2 mejorada faltan cambios" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/vistas.py</url>
+          <line>364</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/vistas.py</url>
+          <line>524</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

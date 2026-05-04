@@ -191,3 +191,16 @@ class GestorBD:
             cursor.execute('SELECT id, usuario, rol FROM usuarios WHERE usuario = ? AND contrasena = ?',
                            (usuario, contrasena))
             return cursor.fetchone()
+
+    def obtener_cotizacion(self, prospecto_id):
+        """Devuelve los datos de la cotización si existen. (Preparación para Fase 3)"""
+        with sqlite3.connect(self.db_name) as conexion:
+            cursor = conexion.cursor()
+            try:
+                # Intentamos buscar si ya hay una cotización guardada
+                cursor.execute('SELECT * FROM cotizaciones WHERE prospecto_id = ?', (prospecto_id,))
+                return cursor.fetchone()
+            except sqlite3.OperationalError:
+                # Si la tabla "cotizaciones" aún no existe (porque apenas la vamos a crear),
+                # simplemente devolvemos None para que el programa no colapse.
+                return None
