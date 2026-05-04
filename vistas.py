@@ -1023,6 +1023,7 @@ class DetalleProspecto(QWidget):
 
 class TarjetaProspecto(QFrame):
     clicked = Signal(int, str, str)
+
     def __init__(self, prospecto_id, nombre, telefono, cita_info=None):
         super().__init__()
 
@@ -1030,30 +1031,28 @@ class TarjetaProspecto(QFrame):
         self.nombre = nombre
         self.telefono = telefono
 
-        # Consultamos rápidamente la BD para saber en qué fase va
         db = GestorBD()
         medicion_info = db.obtener_medicion(prospecto_id)
         cotizacion_info = db.obtener_cotizacion(prospecto_id)
 
-        # Lógica de progreso y colores
+        # Lógica de progreso
         if cotizacion_info:
-            progreso = 100
-            texto_fase = "Fase 3: Cotizado"
-            color_barra = "#27AE60"  # Verde éxito
+            progreso = 100;
+            texto_fase = "Fase 3: Cotizado";
+            color_barra = "#27AE60"
         elif medicion_info:
-            progreso = 66
-            texto_fase = "Fase 2: Medición"
-            color_barra = "#3498DB"  # Azul proceso
+            progreso = 66;
+            texto_fase = "Fase 2: Medición";
+            color_barra = "#3498DB"
         elif cita_info:
-            progreso = 33
-            texto_fase = "Fase 1: Cita Agendada"
-            color_barra = "#F39C12"  # Naranja espera
+            progreso = 33;
+            texto_fase = "Fase 1: Cita Agendada";
+            color_barra = "#F39C12"
         else:
-            progreso = 5  # Un pequeñísimo avance visual
-            texto_fase = "Contacto Inicial"
-            color_barra = "#94A3B8"  # Gris neutral
+            progreso = 5;
+            texto_fase = "Contacto Inicial";
+            color_barra = "#94A3B8"
 
-        # Estilo base de la tarjeta
         self.setStyleSheet("""
             TarjetaProspecto { 
                 background-color: white; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 5px;
@@ -1064,32 +1063,58 @@ class TarjetaProspecto(QFrame):
 
         layout_principal = QHBoxLayout(self)
         layout_principal.setContentsMargins(20, 15, 20, 15)
-        layout_principal.setSpacing(20)
 
-        # 1. SECCIÓN IZQUIERDA: Nombre y Teléfono
+        # 1. SECCIÓN IZQUIERDA: Info agrupada (Nombre, Teléfono y Badge de Cita)
         layout_info = QVBoxLayout()
-        layout_info.setSpacing(4)
+        layout_info.setSpacing(6)
+
         lbl_nombre = QLabel(nombre)
-        lbl_nombre.setStyleSheet("font-size: 16px; font-weight: bold; color: #1E293B; border: none;")
-        lbl_tel = QLabel(f"📞 {telefono}")
-        lbl_tel.setStyleSheet("font-size: 13px; font-weight: 600; color: #64748B; border: none;")
+        lbl_nombre.setStyleSheet(
+            "font-size: 16px; font-weight: bold; color: #1E293B; border: none; background: transparent;")
         layout_info.addWidget(lbl_nombre)
-        layout_info.addWidget(lbl_tel)
+
+        # Sub-layout para que el teléfono y la cita compartan la misma línea
+        layout_detalles = QHBoxLayout()
+        layout_detalles.setSpacing(12)
+        layout_detalles.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        lbl_tel = QLabel(f"📞 {telefono}")
+        lbl_tel.setStyleSheet(
+            "font-size: 13px; font-weight: 600; color: #64748B; border: none; background: transparent;")
+        layout_detalles.addWidget(lbl_tel)
+
+        # El badge de la cita ahora va justo al lado del teléfono
+        if cita_info:
+            fecha_str, hora_str = cita_info
+            fecha_cita = QDate.fromString(fecha_str, "dd/MM/yyyy")
+
+            if fecha_cita >= QDate.currentDate():
+                lbl_cita = QLabel(f"📅 Cita: {fecha_str} - {hora_str}")
+                lbl_cita.setStyleSheet("""
+                    font-size: 11px; color: #EA580C; font-weight: bold; 
+                    background-color: #FFF7ED; border: 1px solid #FED7AA; 
+                    border-radius: 4px; padding: 3px 8px;
+                """)
+                layout_detalles.addWidget(lbl_cita)
+
+        layout_info.addLayout(layout_detalles)
         layout_principal.addLayout(layout_info)
 
+        # ESTE STRETCH EMPUJA LA BARRA A LA DERECHA ABSOLUTA (y absorbe los vacíos)
         layout_principal.addStretch()
 
-        # 2. SECCIÓN CENTRAL: Indicador de Fase y Barra de Progreso
+        # 2. SECCIÓN DERECHA: Indicador de Fase y Barra de Progreso
         layout_progreso = QVBoxLayout()
-        layout_progreso.setSpacing(4)
-        layout_progreso.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        layout_progreso.setSpacing(5)
+        layout_progreso.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         lbl_fase = QLabel(texto_fase)
         lbl_fase.setStyleSheet(
             f"font-size: 11px; font-weight: 800; color: {color_barra}; text-transform: uppercase; border: none; background: transparent;")
+        lbl_fase.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         barra = QProgressBar()
-        barra.setFixedSize(140, 6)  # Barra delgada y elegante
+        barra.setFixedSize(140, 6)
         barra.setTextVisible(False)
         barra.setValue(progreso)
         barra.setStyleSheet(f"""
@@ -1101,44 +1126,14 @@ class TarjetaProspecto(QFrame):
         layout_progreso.addWidget(barra)
         layout_principal.addLayout(layout_progreso)
 
-        # 3. SECCIÓN DERECHA: Badge de la Cita (Opcional)
-        if cita_info:
-            fecha_str, hora_str = cita_info
-            fecha_cita = QDate.fromString(fecha_str, "dd/MM/yyyy")
+        # PROTECCIÓN DE CLICS
+        from PySide6.QtWidgets import QWidget
+        for hijo in self.findChildren(QWidget):
+            hijo.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
-            # Solo agregamos el indicador si la cita es HOY o en el FUTURO
-            if fecha_cita >= QDate.currentDate():
-                frame_badge = QFrame()
-                frame_badge.setFixedWidth(180)  # Fijamos el ancho para que todas las tarjetas se alineen igual
-                frame_badge.setStyleSheet(
-                    "QFrame { background-color: #FFF7ED; border: 1px solid #FED7AA; border-radius: 6px; }")
-                layout_badge = QHBoxLayout(frame_badge)
-                layout_badge.setContentsMargins(10, 5, 10, 5)
-
-                lbl_cita = QLabel(f"📅 {fecha_str} - {hora_str}")
-                lbl_cita.setStyleSheet(
-                    "font-size: 12px; color: #EA580C; font-weight: bold; border: none; background: transparent;")
-                lbl_cita.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-                layout_badge.addWidget(lbl_cita)
-                layout_principal.addWidget(frame_badge)
-            else:
-                # Si la cita ya pasó, agregamos un espaciador del mismo tamaño para que la barra de progreso no se mueva
-                espaciador = QLabel()
-                espaciador.setFixedWidth(180)
-                espaciador.setStyleSheet("border: none; background: transparent;")
-                layout_principal.addWidget(espaciador)
-        else:
-            espaciador = QLabel()
-            espaciador.setFixedWidth(180)
-            espaciador.setStyleSheet("border: none; background: transparent;")
-            layout_principal.addWidget(espaciador)
-
-        # 3. El clic ahora envía los datos empaquetados directo a _abrir_detalle
-        def mousePressEvent(self, event):
-            if event.button() == Qt.MouseButton.LeftButton:
-                self.clicked.emit(self.prospecto_id, self.nombre, self.telefono)
-
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit(self.prospecto_id, self.nombre, self.telefono)
 
 class DialogoNuevoProspecto(QDialog):
     def __init__(self, parent=None):
