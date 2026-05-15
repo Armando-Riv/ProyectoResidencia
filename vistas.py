@@ -325,6 +325,7 @@ class DetalleProspecto(QWidget):
 
         self._construir_fase1()
         self._construir_fase2()
+        self._construir_fase3()
 
         self.layout.addStretch()
         scroll.setWidget(contenedor_scroll)
@@ -1020,6 +1021,79 @@ class DetalleProspecto(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"No se pudo generar el PDF.\nDetalle: {str(e)}")
 
+    def _construir_fase3(self):
+        # --- HEADER DE FASE 3 ---
+        header_fase3 = QHBoxLayout()
+        header_fase3.setContentsMargins(0, 30, 0, 10)
+        lbl_fase3 = QLabel("Fase 3: Cotización Actual")
+        lbl_fase3.setStyleSheet("font-size: 18px; font-weight: bold; color: #1E293B;")
+
+        # Botón Mágico que abre nuestro Catálogo
+        btn_abrir_catalogo = QPushButton("🔍 + Agregar Conceptos del Catálogo")
+        btn_abrir_catalogo.setFixedSize(280, 36)
+        btn_abrir_catalogo.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_abrir_catalogo.setStyleSheet(
+            "QPushButton { background-color: #EF7C0F; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; } QPushButton:hover { background-color: #C06513; }")
+        btn_abrir_catalogo.clicked.connect(self._abrir_ventana_catalogo)
+
+        btn_guardar_cot = QPushButton("💾 Guardar Cotización")
+        btn_guardar_cot.setFixedSize(180, 36)
+        btn_guardar_cot.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_guardar_cot.setStyleSheet(
+            "QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 13px; border-radius: 6px; } QPushButton:hover { background-color: #219653; }")
+
+        header_fase3.addWidget(lbl_fase3)
+        header_fase3.addStretch()
+        header_fase3.addWidget(btn_abrir_catalogo)
+        header_fase3.addWidget(btn_guardar_cot)
+        self.layout.addLayout(header_fase3)
+
+        # --- TABLA DE COTIZACIÓN (EL CARRITO) ---
+        gb_resumen = QGroupBox()
+        gb_resumen.setStyleSheet("""
+            QGroupBox { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; margin-top: 10px; }
+        """)
+        layout_res = QVBoxLayout(gb_resumen)
+        layout_res.setContentsMargins(15, 15, 15, 15)
+
+        self.tabla_cotizacion = QTableWidget(0, 5)
+        self.tabla_cotizacion.setHorizontalHeaderLabels(["Código", "Concepto", "Cant.", "P. Unitario", "Subtotal"])
+        self.tabla_cotizacion.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.tabla_cotizacion.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.tabla_cotizacion.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self.tabla_cotizacion.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self.tabla_cotizacion.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+
+        self.tabla_cotizacion.verticalHeader().setVisible(False)
+        self.tabla_cotizacion.setMinimumHeight(250)
+        self.tabla_cotizacion.setStyleSheet("""
+            QTableWidget { border: 1px solid #CBD5E1; border-radius: 6px; background-color: white; gridline-color: #E2E8F0; color: #1E293B;}
+            QTableWidget::item { color: #1E293B; padding: 5px; } 
+            QHeaderView::section { background-color: #F1F5F9; padding: 5px; font-weight: bold; color: #1E293B; border: none; border-bottom: 1px solid #CBD5E1; }
+        """)
+
+        # Totales
+        layout_totales = QHBoxLayout()
+        lbl_total_txt = QLabel("Total de la Cocina:")
+        lbl_total_txt.setStyleSheet("font-size: 16px; font-weight: bold; color: #64748B;")
+        self.lbl_total_val = QLabel("$ 0.00")
+        self.lbl_total_val.setStyleSheet("font-size: 22px; font-weight: 900; color: #27AE60;")
+
+        layout_totales.addStretch()
+        layout_totales.addWidget(lbl_total_txt)
+        layout_totales.addWidget(self.lbl_total_val)
+
+        layout_res.addWidget(self.tabla_cotizacion)
+        layout_res.addLayout(layout_totales)
+        self.layout.addWidget(gb_resumen)
+
+    def _abrir_ventana_catalogo(self):
+        # Abre la ventana modal
+        dialogo = DialogoCatalogo(self)
+        dialogo.exec()
+
+
+
 
 class TarjetaProspecto(QFrame):
     clicked = Signal(int, str, str)
@@ -1391,3 +1465,106 @@ class PanelProspectos(QWidget):
             nombre, telefono = dialogo.obtener_datos()
             self.db.agregar_prospecto(nombre, telefono, self.usuario_id)
             self.cargar_datos()
+
+
+class DialogoCatalogo(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Catálogo de Conceptos - Excellence Cocinas")
+        self.setFixedSize(900, 600)  # Ventana grande y cómoda
+        self.setStyleSheet("background-color: #F8FAFC;")
+
+        layout_principal = QVBoxLayout(self)
+        layout_principal.setContentsMargins(20, 20, 20, 20)
+        layout_principal.setSpacing(15)
+
+        # Buscador superior
+        self.input_buscador = QLineEdit()
+        self.input_buscador.setPlaceholderText("🔍 Buscar por código, descripción o categoría...")
+        self.input_buscador.setFixedHeight(40)
+        self.input_buscador.setStyleSheet("""
+            QLineEdit { background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 6px; padding: 0px 15px; font-size: 14px; color: #1E293B; }
+            QLineEdit:focus { border: 1px solid #EF7C0F; }
+        """)
+        layout_principal.addWidget(self.input_buscador)
+
+        # Layout dividido: Lista Izquierda y Tabla Derecha
+        layout_contenido = QHBoxLayout()
+        layout_contenido.setSpacing(15)
+
+        # 1. Categorías (Izquierda)
+        from PySide6.QtWidgets import QListWidget, QAbstractItemView
+        self.lista_categorias = QListWidget()
+        self.lista_categorias.setFixedWidth(200)
+        categorias = [
+            "🗄️ Muebles", "🔌 Electrodomésticos", "🪨 Cubiertas",
+            "🧱 Zoclo", "🪟 Persianas", "⚙️ Herrajes Especiales",
+            "💡 Iluminación", "➕ Accesorios y Extras"
+        ]
+        self.lista_categorias.addItems(categorias)
+        self.lista_categorias.setStyleSheet("""
+            QListWidget { border: 1px solid #CBD5E1; border-radius: 6px; background-color: #FFFFFF; outline: none; font-size: 14px; font-weight: bold; color: #475569;}
+            QListWidget::item { padding: 12px; border-bottom: 1px solid #F1F5F9; }
+            QListWidget::item:selected { background-color: #EF7C0F; color: white; border-radius: 4px;}
+            QListWidget::item:hover:!selected { background-color: #F8FAFC; }
+        """)
+
+        # 2. Tabla de Catálogo (Derecha)
+        self.tabla_catalogo = QTableWidget(0, 4)
+        self.tabla_catalogo.setHorizontalHeaderLabels(["Código", "Descripción", "Precio Base", ""])
+        self.tabla_catalogo.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.tabla_catalogo.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.tabla_catalogo.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self.tabla_catalogo.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self.tabla_catalogo.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_catalogo.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_catalogo.verticalHeader().setVisible(False)
+        self.tabla_catalogo.setStyleSheet("""
+            QTableWidget { border: 1px solid #CBD5E1; border-radius: 6px; background-color: white; gridline-color: #E2E8F0; color: #1E293B; font-size: 13px; }
+            QTableWidget::item { color: #1E293B; padding: 5px; } 
+            QHeaderView::section { background-color: #F1F5F9; padding: 8px; font-weight: bold; color: #1E293B; border: none; border-bottom: 1px solid #CBD5E1; }
+        """)
+
+        layout_contenido.addWidget(self.lista_categorias)
+        layout_contenido.addWidget(self.tabla_catalogo)
+        layout_principal.addLayout(layout_contenido)
+
+        # Botón inferior para cerrar
+        btn_cerrar = QPushButton("Terminar de Agregar")
+        btn_cerrar.setFixedSize(200, 40)
+        btn_cerrar.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_cerrar.setStyleSheet(
+            "QPushButton { background-color: #27AE60; color: white; font-weight: bold; font-size: 14px; border-radius: 6px; } QPushButton:hover { background-color: #219653; }")
+        btn_cerrar.clicked.connect(self.accept)
+
+        layout_btn = QHBoxLayout()
+        layout_btn.addStretch()
+        layout_btn.addWidget(btn_cerrar)
+        layout_principal.addLayout(layout_btn)
+
+        # Conexión Demo
+        self.lista_categorias.currentRowChanged.connect(self._cargar_catalogo_demo)
+        self.lista_categorias.setCurrentRow(0)
+
+    def _cargar_catalogo_demo(self, index):
+        self.tabla_catalogo.setRowCount(0)
+        datos_demo = {
+            0: [("M-001", "Gabinete Base 60cm c/ Cajones", "$ 2,500.00"),
+                ("M-002", "Alacena Superior 90cm", "$ 1,800.00"), ("M-003", "Isla Central 120x80cm", "$ 5,500.00")],
+            1: [("EL-01", "Campana Extractora Inox 90cm", "$ 4,200.00"),
+                ("EL-02", "Parrilla a Gas 5 Quemadores", "$ 6,800.00")],
+            2: [("CB-01", "Cubierta Cuarzo Blanco (Metro Lineal)", "$ 3,500.00"),
+                ("CB-02", "Cubierta Granito San Gabriel", "$ 2,800.00")],
+        }
+        items = datos_demo.get(index, [("N/A", "Concepto de prueba", "$ 1,000.00")])
+        for row, (codigo, nombre, precio) in enumerate(items):
+            self.tabla_catalogo.insertRow(row)
+            self.tabla_catalogo.setItem(row, 0, QTableWidgetItem(codigo))
+            self.tabla_catalogo.setItem(row, 1, QTableWidgetItem(nombre))
+            self.tabla_catalogo.setItem(row, 2, QTableWidgetItem(precio))
+
+            btn_add = QPushButton("+ Agregar")
+            btn_add.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_add.setStyleSheet(
+                "background-color: #FFF7ED; color: #EA580C; border: 1px solid #FED7AA; border-radius: 4px; font-weight: bold; padding: 4px 10px;")
+            self.tabla_catalogo.setCellWidget(row, 3, btn_add)

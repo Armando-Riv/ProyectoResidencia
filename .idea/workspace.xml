@@ -256,20 +256,4 @@
     <MESSAGE value="cambios a fase 1 en la ui para verse mas limpio" />
     <option name="LAST_COMMIT_MESSAGE" value="cambios a fase 1 en la ui para verse mas limpio" />
   </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/vistas.py</url>
-          <line>399</line>
-          <option name="timeStamp" value="4" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/vistas.py</url>
-          <line>559</line>
-          <option name="timeStamp" value="5" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
-  </component>
 </project>
